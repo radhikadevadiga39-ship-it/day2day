@@ -3,209 +3,173 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Day2Day ✨ – Girly Diary Task App</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Pacifico&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Day2Day ✨ — Diary Tasks</title>
   <style>
     :root{
-      --bg1:#fff1f6; /* soft pink */
-      --bg2:#ffe8f1; /* blush */
-      --ink:#3b1d2c; /* plum-brown */
-      --pri:#ff6fb7; /* hot pink */
-      --pri-2:#ffa6d3; /* light hot pink */
-      --sec:#8b5cf6; /* lavender */
-      --good:#22c55e;
-      --warn:#f59e0b;
-      --bad:#ef4444;
+      --pink:#ff7eb8;
+      --rose:#ffb3cd;
+      --blush:#ffd6e6;
+      --lav:#a97cff;
+      --mint:#b6ffe0;
+      --ink:#2a2233;
+      --bg:#fff7fb;
+      --card:#ffffff;
     }
-    html,body{height:100%;}
-    body{
-      background: radial-gradient(1000px 600px at -10% -10%, var(--bg2), transparent),
-                  radial-gradient(800px 500px at 110% -10%, var(--bg2), transparent),
-                  linear-gradient(180deg, var(--bg1), #ffffff);
-      color:var(--ink);
-      font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";}
+    /* Cute header */
+    header{
+      position:sticky;top:0;z-index:5;
+      background: linear-gradient(90deg,var(--blush),var(--rose),var(--lav));
+      color:#331a3a;border-bottom:2px dashed rgba(0,0,0,0.08);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px 18px;backdrop-filter: blur(8px);
     }
-    /* cute floating bubbles */
-    .bubble{
-      position:absolute; border-radius:9999px; filter:blur(12px); opacity:.5; pointer-events:none;
-      animation: float 18s ease-in-out infinite;
+    .brand{
+      display:flex;align-items:center;gap:10px;
+      font-weight:800;letter-spacing:0.5px;font-size:20px;
+      text-transform: lowercase;
     }
-    @keyframes float { 0%{ transform:translateY(0) translateX(0) scale(1);} 50%{ transform:translateY(-20px) translateX(10px) scale(1.05);} 100%{ transform:translateY(0) translateX(0) scale(1);} }
-
-    .card{ backdrop-filter: blur(10px); }
-    .tick-anim{ transition: transform .2s ease, opacity .2s ease; }
-    .tick-anim.checked{ transform: scale(1.05); opacity:.85; }
-    .shine{
-      position:relative; overflow:hidden;
+    .brand .sparkle{animation: twinkle 1.8s ease-in-out infinite;}
+    @keyframes twinkle {0%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.06)} 100%{opacity:1;transform:scale(1)}}
+    .pill{
+      background:#fff;color:var(--ink);border-radius:999px;padding:8px 12px;
+      box-shadow:0 6px 16px rgba(255,126,184,0.25);display:flex;align-items:center;gap:8px;
     }
-    .shine::after{
-      content:""; position:absolute; inset:-200% -200% auto auto; width:60%; height:200%;
-      transform: rotate(25deg); background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
-      animation: shine 5s linear infinite;
+    .btn{
+      border:0;border-radius:12px;padding:10px 14px;cursor:pointer;
+      background:linear-gradient(135deg,var(--rose),var(--pink));color:#3b1130;font-weight:700;
+      box-shadow:0 8px 16px rgba(255,126,184,0.35);transition: transform .12s ease, box-shadow .2s ease, filter .2s ease;
     }
-    @keyframes shine{ 0%{ transform: translateX(-120%) rotate(25deg);} 60%{ transform: translateX(40%) rotate(25deg);} 100%{ transform: translateX(120%) rotate(25deg);} }
-
-    /* minimal calendar styles */
-    .calendar-grid{ display:grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap:.5rem; }
-    .day-cell{ min-height:72px; }
+    .btn:hover{transform: translateY(-2px);filter: brightness(1.05);box-shadow:0 10px 20px rgba(255,126,184,0.45)}
+    .btn.ghost{background:#fff;color:var(--ink);border:2px dashed var(--rose);box-shadow:none}
+    main{max-width:1100px;margin:18px auto;padding:0 16px;display:grid;grid-template-columns: 300px 1fr;gap:18px}
+    @media (max-width:900px){main{grid-template-columns:1fr}}
+    .card{
+      background:var(--card);border-radius:18px;border:1px solid #f3e3ef;
+      box-shadow:0 8px 28px rgba(169,124,255,0.12), 0 2px 6px rgba(0,0,0,0.03);
+      padding:14px 14px 10px 14px;overflow:hidden
+    }
+    .section-title{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#7a5a88;margin:4px 0 10px}
+    /* Sidebar */
+    .profile{
+      display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:linear-gradient(180deg,#fff, #fff8ff)
+    }
+    .avatar{font-size:28px;filter: drop-shadow(0 6px 8px rgba(0,0,0,0.08))}
+    .label{font-size:12px;color:#846394}
+    .space-row{display:flex;gap:8px;margin-top:10px}
+    input[type="text"], textarea, select, input[type="date"]{
+      width:100%;padding:10px 12px;border:1px dashed #efc7dc;border-radius:12px;background:#fff;outline:none;
+      font:inherit;color:var(--ink);transition:border-color .2s ease, box-shadow .2s ease
+    }
+    input:focus, textarea:focus, select:focus{border-color:var(--pink);box-shadow:0 0 0 4px rgba(255,126,184,0.15)}
+    .calendar-row{display:flex;gap:8px;align-items:center}
+    /* Members */
+    .members{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:999px;border:1px dashed #f1cfe0;background:#fff
+    }
+    .chip .kick{background:transparent;border:0;color:#c04a7f;font-weight:800;cursor:pointer}
+    /* Tasks */
+    .taskbar{display:flex;gap:10px;flex-wrap:wrap}
+    .task{
+      display:grid;grid-template-columns: 28px 1fr auto;gap:10px;align-items:flex-start;
+      padding:12px;border-radius:14px;border:1px solid #f0e0f0;background:linear-gradient(180deg,#fff,#fff9fd);
+      transition: transform .12s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .task:hover{transform: translateY(-1px);box-shadow:0 8px 22px rgba(255,179,205,0.18)}
+    .task.done{opacity:0.72;filter:saturate(0.7)}
+    .task-title{font-weight:800}
+    .task-desc{font-size:13px;color:#6b5b75}
+    .assignees{display:flex;gap:6px}
+    .emoji{font-size:18px}
+    .tag{padding:4px 8px;border-radius:999px;background:var(--mint);font-size:12px}
+    .feedback{display:flex;gap:8px;margin-top:6px}
+    .empty{padding:16px;text-align:center;color:#846394}
+    /* Subtle float animation */
+    .float{animation: floaty 6s ease-in-out infinite}
+    @keyframes floaty {0%{transform: translateY(0)} 50%{transform: translateY(-6px)} 100%{transform: translateY(0)}}
   </style>
 </head>
-<body class="relative min-h-full">
-  <!-- background bubbles -->
-  <div class="bubble" style="top:8%; left:5%; width:160px; height:160px; background:radial-gradient(circle, #ffd3e8, transparent);"></div>
-  <div class="bubble" style="top:60%; left:80%; width:240px; height:240px; background:radial-gradient(circle, #e9d5ff, transparent);"></div>
-  <div class="bubble" style="top:30%; left:60%; width:180px; height:180px; background:radial-gradient(circle, #ffc7e3, transparent);"></div>
-
-  <!-- Header / Auth -->
-  <header class="max-w-6xl mx-auto px-4 pt-6 pb-2">
-    <div class="flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-2xl bg-white/70 ring-2 ring-pink-300 flex items-center justify-center text-2xl">✨</div>
-        <div>
-          <h1 class="font-black text-3xl sm:text-4xl tracking-tight" style="font-family:Pacifico, cursive; color:var(--pri)">Day2Day</h1>
-          <div class="text-sm -mt-1 text-pink-700/80">girly diary • tasks • vibes 💖</div>
-        </div>
-      </div>
-      <div id="authArea" class="flex items-center gap-3">
-        <!-- Populated by JS (Sign in / User chip) -->
-      </div>
+<body>
+  <header>
+    <div class="brand float">
+      <span class="sparkle">✨</span>
+      <span style="font-size:22px;">Day2Day</span>
+      <span style="font-weight:300">— diary task app</span>
+    </div>
+    <div class="pill">
+      <span id="userAvatar" class="avatar">🙂</span>
+      <span id="userName">Guest</span>
+      <button id="signInBtn" class="btn">Sign in with Google</button>
+      <button id="signOutBtn" class="btn ghost" style="display:none">Sign out</button>
     </div>
   </header>
 
-  <!-- Main -->
-  <main class="max-w-6xl mx-auto px-4 pb-24">
-    <!-- Onboarding / create or join space -->
-    <section id="onboard" class="hidden">
-      <div class="card rounded-3xl p-6 bg-white/70 shadow-xl ring-1 ring-white/50">
-        <div class="flex flex-col md:flex-row gap-6 items-start">
-          <div class="flex-1">
-            <h2 class="text-2xl font-extrabold text-pink-700">Hey gorgeous! 🌸</h2>
-            <p class="text-sm text-pink-900/80 mt-1">Welcome to your shared diary task app. Pick a cute emoji avatar and a space name to collaborate with your besties. Google Sign‑In only (Gmail), so you’re safe & synced.</p>
-            <div class="mt-4 grid sm:grid-cols-2 gap-4">
-              <label class="block text-sm">
-                <span class="font-semibold">Your display name</span>
-                <input id="displayNameInput" type="text" class="mt-1 w-full rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300" placeholder="Tejal, Boss Babe, etc."/>
-              </label>
-              <label class="block text-sm">
-                <span class="font-semibold">Pick an emoji avatar</span>
-                <input id="emojiInput" type="text" maxlength="2" class="mt-1 w-full rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300" placeholder="💖 🦋 🌸 😻"/>
-              </label>
-              <label class="block text-sm sm:col-span-2">
-                <span class="font-semibold">Shared space name</span>
-                <input id="spaceInput" type="text" class="mt-1 w-full rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300" placeholder="room name everyone uses (e.g., besties, study-club)"/>
-              </label>
-            </div>
-            <button id="saveProfileBtn" class="mt-4 px-5 py-3 rounded-2xl bg-pink-500 text-white font-semibold hover:bg-pink-600 active:scale-95 transition shine">Save & Start 💅</button>
-          </div>
-          <div class="flex-1 w-full">
-            <div class="rounded-3xl bg-gradient-to-br from-pink-200 to-pink-100 p-4 ring-1 ring-pink-300/40">
-              <h3 class="font-bold text-pink-800">What you get</h3>
-              <ul class="list-disc pl-6 mt-2 text-sm text-pink-900/80 space-y-1">
-                <li>Shared tasks per space (add your squad once & go 💫)</li>
-                <li>Tick off tasks with satisfying animations ✅</li>
-                <li>Calendar view with due dates 📅</li>
-                <li>Task descriptions + optional feedback 💬</li>
-                <li>Member profiles with emoji avatars 🫶</li>
-              </ul>
-            </div>
-          </div>
+  <main>
+    <!-- LEFT: Profile & Filters -->
+    <section class="card">
+      <div class="section-title">Profile</div>
+      <div class="profile">
+        <div id="profileEmoji" class="avatar">💖</div>
+        <div>
+          <div id="profileName" style="font-weight:800">Not signed in</div>
+          <div id="profileEmail" class="label">—</div>
         </div>
+      </div>
+
+      <div style="height:10px"></div>
+      <div class="label">Pick emoji avatar</div>
+      <select id="emojiSelect">
+        <option>💖</option><option>🌸</option><option>🎀</option><option>🦩</option>
+        <option>🧁</option><option>🫶</option><option>🌈</option><option>🦄</option>
+        <option>😊</option><option>✨</option><option>🍓</option><option>🌼</option>
+      </select>
+      <div style="height:6px"></div>
+      <button class="btn" id="saveAvatarBtn">Save avatar</button>
+
+      <div style="height:16px"></div>
+      <div class="section-title">Space</div>
+      <div class="label">Shared space code (invite friends)</div>
+      <div class="space-row">
+        <input type="text" id="spaceCode" placeholder="e.g., study-buds" />
+        <button class="btn" id="joinSpaceBtn">Join</button>
+      </div>
+      <div class="label" style="margin-top:8px">Members</div>
+      <div id="memberList" class="members"></div>
+
+      <div style="height:16px"></div>
+      <div class="section-title">Calendar</div>
+      <div class="calendar-row">
+        <input type="date" id="taskDate" />
+        <button class="btn" id="todayBtn">Today</button>
       </div>
     </section>
 
-    <!-- App -->
-    <section id="app" class="hidden">
-      <div class="grid lg:grid-cols-3 gap-6">
-        <!-- Left: Create Task -->
-        <div class="lg:col-span-1">
-          <div class="card rounded-3xl p-6 bg-white/70 shadow-xl ring-1 ring-white/50">
-            <h2 class="text-xl font-extrabold text-pink-700">New task ✍️</h2>
-            <div class="mt-3 grid grid-cols-1 gap-3">
-              <label class="text-sm font-semibold">Title
-                <input id="taskTitle" type="text" class="mt-1 w-full rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300" placeholder="e.g. Submit assignment"/>
-              </label>
-              <label class="text-sm font-semibold">Description
-                <textarea id="taskDesc" rows="3" class="mt-1 w-full rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300" placeholder="Add the juicy details 💗"></textarea>
-              </label>
-              <div class="grid grid-cols-2 gap-3">
-                <label class="text-sm font-semibold">Due date
-                  <input id="taskDue" type="date" class="mt-1 w-full rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300"/>
-                </label>
-                <label class="text-sm font-semibold">Assignee
-                  <select id="taskAssignee" class="mt-1 w-full rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300"></select>
-                </label>
-              </div>
-              <label class="text-sm font-semibold">Optional feedback note (private to assignee)
-                <input id="taskFeedback" type="text" class="mt-1 w-full rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300" placeholder="You got this! ⭐"/>
-              </label>
-              <button id="addTaskBtn" class="mt-2 px-5 py-3 rounded-2xl bg-pink-500 text-white font-semibold hover:bg-pink-600 active:scale-95 transition shine">Add task 💖</button>
-            </div>
-          </div>
-
-          <div class="card rounded-3xl p-6 bg-white/70 shadow-xl ring-1 ring-white/50 mt-6">
-            <h3 class="text-lg font-extrabold text-pink-700">Members 🫶</h3>
-            <div id="memberList" class="mt-3 grid gap-2"></div>
-          </div>
-        </div>
-
-        <!-- Right: Tasks + Calendar -->
-        <div class="lg:col-span-2 space-y-6">
-          <div class="card rounded-3xl p-6 bg-white/70 shadow-xl ring-1 ring-white/50">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <h2 class="text-xl font-extrabold text-pink-700">Tasks for <span id="spaceLabel" class="underline decoration-wavy decoration-pink-400"></span></h2>
-              <div class="flex gap-2">
-                <input id="searchInput" type="text" class="w-full sm:w-64 rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300" placeholder="Search title/desc"/>
-                <select id="filterSelect" class="rounded-xl border-pink-200 focus:border-pink-400 focus:ring-pink-300">
-                  <option value="all">All</option>
-                  <option value="open">Open</option>
-                  <option value="done">Done</option>
-                  <option value="mine">Assigned to me</option>
-                </select>
-              </div>
-            </div>
-            <div id="taskList" class="mt-4 grid gap-3"></div>
-          </div>
-
-          <div class="card rounded-3xl p-6 bg-white/70 shadow-xl ring-1 ring-white/50">
-            <div class="flex items-center justify-between">
-              <h2 class="text-xl font-extrabold text-pink-700">Calendar 📅</h2>
-              <div class="flex items-center gap-2">
-                <button id="prevMonth" class="px-3 py-2 rounded-xl bg-white/90 ring-1 ring-pink-200 hover:bg-pink-50">◀</button>
-                <div id="monthLabel" class="font-bold"></div>
-                <button id="nextMonth" class="px-3 py-2 rounded-xl bg-white/90 ring-1 ring-pink-200 hover:bg-pink-50">▶</button>
-              </div>
-            </div>
-            <div class="calendar-grid mt-4">
-              <div class="text-xs font-semibold text-center text-pink-800">Sun</div>
-              <div class="text-xs font-semibold text-center text-pink-800">Mon</div>
-              <div class="text-xs font-semibold text-center text-pink-800">Tue</div>
-              <div class="text-xs font-semibold text-center text-pink-800">Wed</div>
-              <div class="text-xs font-semibold text-center text-pink-800">Thu</div>
-              <div class="text-xs font-semibold text-center text-pink-800">Fri</div>
-              <div class="text-xs font-semibold text-center text-pink-800">Sat</div>
-            </div>
-            <div id="calendarDays" class="calendar-grid mt-2"></div>
-          </div>
-        </div>
+    <!-- RIGHT: Tasks -->
+    <section class="card">
+      <div class="section-title">New task</div>
+      <div class="taskbar">
+        <input type="text" id="taskTitle" placeholder="Title (e.g., Revise glycolysis)" />
+        <input type="text" id="taskFor" placeholder="Assign to (email, optional)" />
+        <textarea id="taskDesc" placeholder="Description (optional)"></textarea>
+        <button class="btn" id="addTaskBtn">Add task</button>
       </div>
+
+      <div style="height:10px"></div>
+      <div class="section-title">Tasks</div>
+      <div id="taskList"></div>
+      <div id="emptyState" class="empty" style="display:none">No tasks for this date. Add something cute ✨</div>
     </section>
   </main>
 
-  <!-- Footer brand -->
-  <footer class="fixed bottom-4 right-4 text-xs text-pink-700/70 select-none">textday2day • made with 💗</footer>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    // Firebase Web v10+ modular SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  <!-- Firebase SDKs (Compat for simplicity in one HTML file) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
-
-  <script>
-    // === Firebase config (from your sample) ===
+    // Replace with the provided sample configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCERpjMWaks-VwF0rQl4fTUJA6alU8QnzU",
       authDomain: "day2day-43309.firebaseapp.com",
@@ -217,355 +181,249 @@
     };
 
     // Init
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    try { firebase.analytics(); } catch(e) {}
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // DOM refs
-    const authArea = document.getElementById('authArea');
-    const onboard = document.getElementById('onboard');
-    const appEl = document.getElementById('app');
-
-    const displayNameInput = document.getElementById('displayNameInput');
-    const emojiInput = document.getElementById('emojiInput');
-    const spaceInput = document.getElementById('spaceInput');
-    const saveProfileBtn = document.getElementById('saveProfileBtn');
-
-    const taskTitle = document.getElementById('taskTitle');
-    const taskDesc = document.getElementById('taskDesc');
-    const taskDue = document.getElementById('taskDue');
-    const taskAssignee = document.getElementById('taskAssignee');
-    const taskFeedback = document.getElementById('taskFeedback');
-    const addTaskBtn = document.getElementById('addTaskBtn');
-
-    const taskList = document.getElementById('taskList');
+    // Elements
+    const signInBtn = document.getElementById('signInBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const userAvatar = document.getElementById('userAvatar');
+    const userName = document.getElementById('userName');
+    const profileEmoji = document.getElementById('profileEmoji');
+    const profileName = document.getElementById('profileName');
+    const profileEmail = document.getElementById('profileEmail');
+    const emojiSelect = document.getElementById('emojiSelect');
+    const saveAvatarBtn = document.getElementById('saveAvatarBtn');
+    const spaceCodeInput = document.getElementById('spaceCode');
+    const joinSpaceBtn = document.getElementById('joinSpaceBtn');
     const memberList = document.getElementById('memberList');
-    const spaceLabel = document.getElementById('spaceLabel');
-
-    const searchInput = document.getElementById('searchInput');
-    const filterSelect = document.getElementById('filterSelect');
-
-    // Calendar refs
-    const prevMonthBtn = document.getElementById('prevMonth');
-    const nextMonthBtn = document.getElementById('nextMonth');
-    const monthLabel = document.getElementById('monthLabel');
-    const calendarDays = document.getElementById('calendarDays');
+    const taskDate = document.getElementById('taskDate');
+    const todayBtn = document.getElementById('todayBtn');
+    const taskTitle = document.getElementById('taskTitle');
+    const taskFor = document.getElementById('taskFor');
+    const taskDesc = document.getElementById('taskDesc');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const taskList = document.getElementById('taskList');
+    const emptyState = document.getElementById('emptyState');
 
     // State
     let currentUser = null;
-    let currentSpace = null; // string
-    let unsubscribeTasks = null;
-    let unsubscribeMembers = null;
-    let calendarCursor = new Date();
+    let currentSpace = null;
+    let taskUnsub = null;
+    let memberUnsub = null;
 
     // Helpers
-    const byId = (id) => document.getElementById(id);
-    const fmtDate = (d) => {
-      if (!d) return '';
-      const dt = (d instanceof Date) ? d : new Date(d);
-      const yyyy = dt.getFullYear();
-      const mm = String(dt.getMonth()+1).padStart(2,'0');
-      const dd = String(dt.getDate()).padStart(2,'0');
-      return `${yyyy}-${mm}-${dd}`;
+    function todayStr(d=new Date()){
+      const tzOff = d.getTimezoneOffset() * 60000;
+      const local = new Date(d - tzOff);
+      return local.toISOString().slice(0,10);
+    }
+    function renderMembers(members){
+      memberList.innerHTML = '';
+      if (!members.length){ memberList.innerHTML = '<span class="label">No members yet</span>'; return; }
+      members.forEach(m=>{
+        const div = document.createElement('div');
+        div.className = 'chip';
+        div.innerHTML = `<span class="emoji">${m.avatar || '🌸'}</span><span>${m.displayName || m.email}</span>`;
+        memberList.appendChild(div);
+      });
+    }
+    function renderTasks(tasks){
+      taskList.innerHTML = '';
+      if (!tasks.length){ emptyState.style.display='block'; return; }
+      emptyState.style.display='none';
+      tasks.forEach(t=>{
+        const div = document.createElement('div');
+        div.className = 'task' + (t.done ? ' done' : '');
+        div.innerHTML = `
+          <input type="checkbox" ${t.done?'checked':''} data-id="${t.id}" />
+          <div>
+            <div class="task-title">${t.title}</div>
+            <div class="task-desc">${t.description || ''}</div>
+            <div class="assignees">${(t.assignees||[]).map(a=>`<span class="emoji" title="${a}">👤</span>`).join('')}</div>
+            <div class="feedback">
+              <input type="text" placeholder="Feedback (optional)" value="${t.feedback||''}" data-fb="${t.id}" />
+              <span class="tag">${t.date}</span>
+            </div>
+          </div>
+          <div>
+            <button class="btn ghost" data-del="${t.id}">🗑️</button>
+          </div>
+        `;
+        taskList.appendChild(div);
+      });
+    }
+
+    // Auth
+    signInBtn.onclick = async ()=>{
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    };
+    signOutBtn.onclick = ()=> signOut(auth);
+
+    onAuthStateChanged(auth, async (user)=>{
+      currentUser = user || null;
+      if (!user){
+        userName.textContent = 'Guest';
+        userAvatar.textContent = '🙂';
+        profileName.textContent = 'Not signed in';
+        profileEmail.textContent = '—';
+        signInBtn.style.display = 'inline-flex';
+        signOutBtn.style.display= 'none';
+        if (taskUnsub) taskUnsub();
+        if (memberUnsub) memberUnsub();
+        renderMembers([]);
+        renderTasks([]);
+        return;
+      }
+      // Create or load profile
+      const uref = doc(db,'users',user.uid);
+      const snap = await getDoc(uref);
+      if (!snap.exists()){
+        await setDoc(uref,{
+          uid:user.uid,
+          email:user.email,
+          displayName:user.displayName,
+          avatar:'💖',
+          spaces:[], // user can join multiple spaces
+          createdAt: serverTimestamp()
+        });
+      }
+      const data = (await getDoc(uref)).data();
+      userName.textContent = data.displayName || user.email;
+      userAvatar.textContent = data.avatar || '💖';
+      profileEmoji.textContent = data.avatar || '💖';
+      profileName.textContent = data.displayName || user.email;
+      profileEmail.textContent = data.email || '';
+      signInBtn.style.display = 'none';
+      signOutBtn.style.display= 'inline-flex';
+
+      // Auto-join default space if none set
+      if (!currentSpace){
+        currentSpace = spaceCodeInput.value || 'day2day-default';
+      }
+      await ensureSpaceMembership(currentSpace);
+      subscribeMembers(currentSpace);
+      subscribeTasks(currentSpace, taskDate.value || todayStr());
+    });
+
+    // Avatar save
+    saveAvatarBtn.onclick = async ()=>{
+      if (!currentUser) return alert('Sign in first');
+      const uref = doc(db,'users', currentUser.uid);
+      await updateDoc(uref,{ avatar: emojiSelect.value });
+      userAvatar.textContent = emojiSelect.value;
+      profileEmoji.textContent = emojiSelect.value;
+      alert('Saved!');
     };
 
-    const show = (el) => el.classList.remove('hidden');
-    const hide = (el) => el.classList.add('hidden');
+    // Space join
+    joinSpaceBtn.onclick = async ()=>{
+      if (!currentUser) return alert('Sign in first');
+      const code = (spaceCodeInput.value || '').trim();
+      if (!code) return alert('Enter a space code');
+      currentSpace = code;
+      await ensureSpaceMembership(code);
+      subscribeMembers(code);
+      subscribeTasks(code, taskDate.value || todayStr());
+    };
 
-    function userChip(user){
-      const span = document.createElement('div');
-      span.className = 'flex items-center gap-3 bg-white/70 ring-1 ring-pink-200 px-3 py-2 rounded-2xl shadow-sm';
-      const emoji = (user?.emoji) || '💖';
-      span.innerHTML = `
-        <div class="text-2xl">${emoji}</div>
-        <div class="leading-tight">
-          <div class="font-semibold">${user?.displayName || user?.email || 'Me'}</div>
-          <div class="text-[11px] text-pink-700/70">${user?.email || ''}</div>
-        </div>
-        <button id="signOutBtn" class="ml-2 px-3 py-1 rounded-xl bg-white/90 ring-1 ring-pink-200 hover:bg-pink-50 text-xs">Sign out</button>
-      `;
-      return span;
-    }
-
-    function signInButton(){
-      const btn = document.createElement('button');
-      btn.className = 'px-4 py-2 rounded-2xl bg-pink-500 text-white font-semibold hover:bg-pink-600 active:scale-95 transition';
-      btn.textContent = 'Sign in with Google';
-      btn.onclick = async () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        // Force Google; Gmail accounts will work. (No other providers enabled.)
-        await auth.signInWithPopup(provider);
-      };
-      return btn;
-    }
-
-    // Render auth area
-    function renderAuth(userDoc){
-      authArea.innerHTML = '';
-      if (!currentUser){
-        authArea.appendChild(signInButton());
-        return;
+    async function ensureSpaceMembership(code){
+      const sref = doc(db,'spaces', code);
+      const s = await getDoc(sref);
+      if (!s.exists()){
+        await setDoc(sref,{ code, createdAt: serverTimestamp() });
       }
-      authArea.appendChild(userChip(userDoc));
-      authArea.querySelector('#signOutBtn').onclick = async ()=>{
-        await auth.signOut();
-      };
-    }
-
-    // Ensure member exists (no need to re-add every time)
-    async function ensureMember(user){
-      const membersRef = db.collection('spaces').doc(currentSpace).collection('members').doc(user.uid);
-      const snap = await membersRef.get();
-      if (!snap.exists){
-        const profile = {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName || displayNameInput.value || user.email,
-          emoji: emojiInput.value || '💖',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        };
-        await membersRef.set(profile, { merge:true });
-      } else if (emojiInput.value || displayNameInput.value){
-        await membersRef.set({
-          displayName: displayNameInput.value || snap.data().displayName,
-          emoji: emojiInput.value || snap.data().emoji
-        }, { merge:true });
-      }
-    }
-
-    // Load members live
-    function watchMembers(){
-      if (unsubscribeMembers) unsubscribeMembers();
-      const membersRef = db.collection('spaces').doc(currentSpace).collection('members');
-      unsubscribeMembers = membersRef.orderBy('displayName').onSnapshot(snap=>{
-        memberList.innerHTML = '';
-        taskAssignee.innerHTML = '';
-        snap.forEach(doc=>{
-          const m = doc.data();
-          const row = document.createElement('div');
-          row.className = 'flex items-center gap-3 bg-white/80 px-3 py-2 rounded-2xl ring-1 ring-pink-200';
-          row.innerHTML = `
-            <div class="text-2xl">${m.emoji || '💖'}</div>
-            <div class="flex-1">
-              <div class="font-semibold">${m.displayName || m.email}</div>
-              <div class="text-[11px] text-pink-700/70">${m.email || ''}</div>
-            </div>
-          `;
-          memberList.appendChild(row);
-
-          const opt = document.createElement('option');
-          opt.value = m.uid;
-          opt.textContent = `${m.emoji || '💖'} ${m.displayName || m.email}`;
-          taskAssignee.appendChild(opt);
-        });
+      // add/ensure member doc
+      const mref = doc(db,'spaces', code, 'members', currentUser.uid);
+      const u = await getDoc(doc(db,'users', currentUser.uid));
+      const uData = u.data();
+      await setDoc(mref,{
+        uid: currentUser.uid,
+        email: currentUser.email,
+        displayName: uData.displayName || currentUser.email,
+        avatar: uData.avatar || '💖',
+        joinedAt: serverTimestamp()
+      }, { merge:true });
+      // link space to user profile
+      await updateDoc(doc(db,'users', currentUser.uid), {
+        spaces: (uData.spaces || []).includes(code) ? uData.spaces : [ ...new Set([...(uData.spaces || []), code]) ]
       });
     }
 
-    // Create task
-    async function addTask(){
-      const title = taskTitle.value.trim();
-      if (!title) return alert('Add a cute title ✨');
-      const desc = taskDesc.value.trim();
-      const due = taskDue.value || null;
-      const assignee = taskAssignee.value || currentUser.uid;
-      const feedback = taskFeedback.value.trim() || '';
-      await db.collection('spaces').doc(currentSpace).collection('tasks').add({
-        title, desc, due, assignee,
-        feedback, done:false,
+    // Members live list
+    function subscribeMembers(code){
+      if (memberUnsub) memberUnsub();
+      const q = query(collection(db,'spaces', code,'members'), orderBy('displayName'));
+      memberUnsub = onSnapshot(q, snap=>{
+        const members = snap.docs.map(d=>({ id:d.id, ...d.data()}));
+        renderMembers(members);
+      });
+    }
+
+    // Tasks live list filtered by date
+    function subscribeTasks(code, dateStr){
+      if (taskUnsub) taskUnsub();
+      const q = query(
+        collection(db,'spaces', code,'tasks'),
+        where('date','==', dateStr),
+        orderBy('createdAt')
+      );
+      taskUnsub = onSnapshot(q, snap=>{
+        const tasks = snap.docs.map(d=>({ id:d.id, ...d.data()}));
+        renderTasks(tasks);
+      });
+    }
+
+    // Calendar controls
+    taskDate.value = todayStr();
+    todayBtn.onclick = ()=>{
+      taskDate.value = todayStr();
+      if (currentSpace) subscribeTasks(currentSpace, taskDate.value);
+    };
+    taskDate.onchange = ()=>{
+      if (currentSpace) subscribeTasks(currentSpace, taskDate.value);
+    };
+
+    // Add task
+    addTaskBtn.onclick = async ()=>{
+      if (!currentUser) return alert('Sign in first');
+      if (!currentSpace) return alert('Join a space first');
+      const title = (taskTitle.value || '').trim();
+      const description = (taskDesc.value || '').trim();
+      const date = taskDate.value || todayStr();
+      const assignEmail = (taskFor.value || '').trim();
+      if (!title) return alert('Title required');
+      let assignees = [];
+      if (assignEmail) assignees = [assignEmail.toLowerCase()];
+      await addDoc(collection(db,'spaces', currentSpace, 'tasks'),{
+        title, description, date, assignees,
+        done:false, feedback:'',
         createdBy: currentUser.uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: serverTimestamp()
       });
-      // clear
-      taskTitle.value = ''; taskDesc.value=''; taskDue.value=''; taskFeedback.value='';
-    }
+      taskTitle.value = ''; taskDesc.value = ''; taskFor.value='';
+    };
 
-    // Render tasks
-    function watchTasks(){
-      if (unsubscribeTasks) unsubscribeTasks();
-      const q = db.collection('spaces').doc(currentSpace).collection('tasks').orderBy('createdAt','desc');
-      unsubscribeTasks = q.onSnapshot(snap=>{
-        const tasks = [];
-        snap.forEach(d=>tasks.push({id:d.id, ...d.data()}));
-        renderTaskList(tasks);
-        renderCalendar(tasks);
-      });
-    }
-
-    function renderTaskList(tasks){
-      const term = (searchInput.value||'').toLowerCase();
-      const mode = filterSelect.value || 'all';
-      const filtered = tasks.filter(t=>{
-        const matchTerm = !term || (t.title?.toLowerCase().includes(term) || t.desc?.toLowerCase().includes(term));
-        const matchMode = (
-          mode==='all' ||
-          (mode==='open' && !t.done) ||
-          (mode==='done' && !!t.done) ||
-          (mode==='mine' && t.assignee===currentUser?.uid)
-        );
-        return matchTerm && matchMode;
-      });
-
-      taskList.innerHTML = '';
-      if (!filtered.length){
-        const empty = document.createElement('div');
-        empty.className = 'text-center text-pink-800/70';
-        empty.textContent = 'No tasks yet. Add something gorgeous ✨';
-        taskList.appendChild(empty);
-        return;
+    // Toggle done/delete/feedback handlers
+    taskList.addEventListener('change', async (e)=>{
+      const id = e.target.getAttribute('data-id');
+      if (id){
+        const checked = e.target.checked;
+        await updateDoc(doc(db,'spaces', currentSpace, 'tasks', id), { done: checked });
       }
-
-      filtered.forEach(t=>{
-        const item = document.createElement('div');
-        item.className = 'rounded-2xl bg-white/80 ring-1 ring-pink-200 p-3 flex items-start gap-3 hover:ring-pink-300 transition';
-        const checked = !!t.done;
-        item.innerHTML = `
-          <button aria-label="tick" data-id="${t.id}" class="tick-anim mt-1 w-6 h-6 flex items-center justify-center rounded-lg ring-1 ${checked? 'bg-green-100 ring-green-300' : 'bg-white ring-pink-200'}">${checked? '✅' : '⬜'}</button>
-          <div class="flex-1">
-            <div class="flex items-center gap-2">
-              <div class="font-semibold ${checked? 'line-through text-pink-800/50' : ''}">${t.title}</div>
-              ${t.due ? `<span class='text-[11px] px-2 py-0.5 rounded-full ${checked? 'bg-green-100 text-green-700 ring-1 ring-green-200' : 'bg-pink-100 text-pink-700 ring-1 ring-pink-200'}'>${t.due}</span>` : ''}
-            </div>
-            ${t.desc ? `<div class="text-sm text-pink-900/80 ${checked? 'line-through opacity-70' : ''}">${t.desc}</div>` : ''}
-            ${t.feedback ? `<div class="text-xs mt-1 px-2 py-1 rounded-xl bg-white/90 ring-1 ring-pink-200">💬 ${t.feedback}</div>` : ''}
-            <div class="text-[11px] text-pink-700/70 mt-1">Assigned to: <span data-assignee="${t.assignee}">...</span></div>
-          </div>
-          <div class="flex flex-col items-end gap-2">
-            <button data-del="${t.id}" class="text-xs px-2 py-1 rounded-xl bg-white/90 ring-1 ring-pink-200 hover:bg-pink-50">Delete</button>
-          </div>
-        `;
-        taskList.appendChild(item);
-      });
-
-      // Fill assignee names
-      db.collection('spaces').doc(currentSpace).collection('members').get().then(snap=>{
-        const map = {};
-        snap.forEach(d=> map[d.id] = d.data());
-        taskList.querySelectorAll('[data-assignee]').forEach(el=>{
-          const uid = el.getAttribute('data-assignee');
-          const m = map[uid];
-          el.textContent = m ? `${m.emoji || '💖'} ${m.displayName || m.email}` : 'Unknown';
-        });
-      });
-
-      // Hook actions
-      taskList.querySelectorAll('[data-id]').forEach(btn=>{
-        btn.addEventListener('click', async ()=>{
-          const id = btn.getAttribute('data-id');
-          const ref = db.collection('spaces').doc(currentSpace).collection('tasks').doc(id);
-          const snap = await ref.get();
-          const done = !snap.data().done;
-          await ref.update({ done });
-          btn.classList.toggle('checked', done);
-        });
-      });
-      taskList.querySelectorAll('[data-del]').forEach(btn=>{
-        btn.addEventListener('click', async ()=>{
-          const id = btn.getAttribute('data-del');
-          if (confirm('Delete this task?')){
-            await db.collection('spaces').doc(currentSpace).collection('tasks').doc(id).delete();
-          }
-        });
-      });
-    }
-
-    // Calendar rendering
-    function renderCalendar(tasks){
-      const year = calendarCursor.getFullYear();
-      const month = calendarCursor.getMonth();
-      const firstDay = new Date(year, month, 1);
-      const startIdx = firstDay.getDay();
-      const daysInMonth = new Date(year, month+1, 0).getDate();
-      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-      monthLabel.textContent = `${monthNames[month]} ${year}`;
-      calendarDays.innerHTML = '';
-
-      // Build a map of date -> tasks
-      const map = {};
-      (tasks||[]).forEach(t=>{ if (t.due){ (map[t.due] ||= []).push(t); }});
-
-      // Leading blanks
-      for (let i=0;i<startIdx;i++){
-        const blank = document.createElement('div');
-        blank.className = 'day-cell';
-        calendarDays.appendChild(blank);
-      }
-      // Actual days
-      for (let d=1; d<=daysInMonth; d++){
-        const cell = document.createElement('div');
-        cell.className = 'day-cell rounded-xl bg-white/80 ring-1 ring-pink-200 p-2 flex flex-col';
-        const dateStr = fmtDate(new Date(year, month, d));
-        const list = map[dateStr] || [];
-        cell.innerHTML = `
-          <div class="text-xs font-bold text-pink-800">${d}</div>
-          <div class="mt-1 space-y-1 max-h-24 overflow-auto">
-            ${list.map(t=>`<div class='text-[11px] px-1.5 py-0.5 rounded-lg ${t.done? 'bg-green-100 ring-1 ring-green-200' : 'bg-pink-100 ring-1 ring-pink-200'} truncate'>${t.title}</div>`).join('')}
-          </div>
-        `;
-        calendarDays.appendChild(cell);
-      }
-    }
-
-    prevMonthBtn.addEventListener('click', ()=>{ calendarCursor.setMonth(calendarCursor.getMonth()-1); if (currentSpace) watchTasks(); });
-    nextMonthBtn.addEventListener('click', ()=>{ calendarCursor.setMonth(calendarCursor.getMonth()+1); if (currentSpace) watchTasks(); });
-
-    addTaskBtn.addEventListener('click', addTask);
-    searchInput.addEventListener('input', ()=>{ if (currentSpace) watchTasks(); });
-    filterSelect.addEventListener('change', ()=>{ if (currentSpace) watchTasks(); });
-
-    saveProfileBtn.addEventListener('click', async ()=>{
-      const nm = (displayNameInput.value || '').trim();
-      const sp = (spaceInput.value || '').trim().toLowerCase();
-      currentSpace = sp || 'day2day'; // default global space name if empty
-      await ensureMember(currentUser);
-      spaceLabel.textContent = currentSpace;
-      watchMembers();
-      watchTasks();
-      hide(onboard); show(appEl);
-    });
-
-    // Auth listener
-    auth.onAuthStateChanged(async (user)=>{
-      currentUser = user;
-      if (!user){
-        hide(onboard); hide(appEl);
-        authArea.innerHTML = '';
-        authArea.appendChild(signInButton());
-        return;
-      }
-      // Load / create user profile doc in a personal meta collection
-      const userDocRef = db.collection('users').doc(user.uid);
-      const userSnap = await userDocRef.get();
-      if (!userSnap.exists){
-        await userDocRef.set({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName || '',
-          emoji: '💖',
-          lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      } else {
-        await userDocRef.set({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-      }
-
-      const userDoc = (await userDocRef.get()).data();
-      renderAuth(userDoc);
-
-      // On first login, show onboarding if no space selected yet
-      currentSpace = localStorage.getItem('space') || null;
-      if (!currentSpace){
-        show(onboard); hide(appEl);
-      } else {
-        spaceLabel.textContent = currentSpace;
-        show(appEl); hide(onboard);
-        watchMembers();
-        watchTasks();
+      const fbId = e.target.getAttribute('data-fb');
+      if (fbId){
+        await updateDoc(doc(db,'spaces', currentSpace, 'tasks', fbId), { feedback: e.target.value });
       }
     });
-
-    // Persist chosen space locally so you don't have to re-add members every time
-    saveProfileBtn.addEventListener('click', ()=>{
-      if (currentSpace) localStorage.setItem('space', currentSpace);
+    taskList.addEventListener('click', async (e)=>{
+      const del = e.target.getAttribute('data-del');
+      if (del){
+        // soft delete: mark hidden (for safety rules); adapt to hard delete if allowed
+        await updateDoc(doc(db,'spaces', currentSpace, 'tasks', del), { hidden: true });
+      }
     });
   </script>
 </body>
