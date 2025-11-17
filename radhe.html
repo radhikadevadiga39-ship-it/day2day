@@ -1,646 +1,1305 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Day2Day - Daily Goals & Vibes</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<style>
-  body { font-family: 'Inter', sans-serif; }
-  /* Animated gradient header */
-  header {
-    background: linear-gradient(270deg, #f9a8d4, #f472b6, #ec4899);
-    background-size: 600% 600%;
-    animation: gradientBG 12s ease infinite;
-    color: white; border-radius: 1.5rem; box-shadow: 0 8px 20px rgba(236,72,153,0.25);
-  }
-  @keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  .card-hover:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 18px 30px rgba(219,39,119,0.06); }
-  .goals-list::-webkit-scrollbar, .messages-container::-webkit-scrollbar { width: 8px; }
-  .goals-list::-webkit-scrollbar-track, .messages-container::-webkit-scrollbar-track { background: #fdf2f8; border-radius: 12px; }
-  .goals-list::-webkit-scrollbar-thumb, .messages-container::-webkit-scrollbar-thumb { background: #f472b6; border-radius: 12px; }
-  .goal-item:hover .delete-goal-btn { opacity: 1; }
-  .calendar-day.has-tasks { background-color: #fce7f3; font-weight: 600; border-radius: 8px; }
-  .calendar-day.is-today { box-shadow: 0 0 0 2px #ec4899; }
-  .timer-running { animation: pulse 2.5s infinite; color: #f43f5e; }
-  .timer-display { font-family: 'Courier New', monospace; font-weight: 700; font-size: 1rem; }
-  @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.6;} }
-  .play-btn, .stop-btn, .complete-btn { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; transition: all 0.25s; display:flex; align-items:center; justify-content:center; }
-  .play-btn { background-color: #f472b6; color: white; }
-  .stop-btn { background-color: #fb7185; color: white; }
-  .complete-btn { background-color: #ec4899; color: white; }
-  .delete-goal-btn { opacity: 0; transition: opacity 0.3s; }
-  .message { background-color: #f3f4f6; padding: 0.75rem 1rem; border-radius: 1rem; max-width: 85%; }
-  .message.sent { background-color: #fce7f3; align-self: flex-end; }
-  .avatar { width:48px; height:48px; border-radius:9999px; display:inline-flex; align-items:center; justify-content:center; font-weight:700; color:white; }
-  .avatar.small { width:36px; height:36px; }
-  .link-bubble { color:#be185d; text-decoration:underline; }
-  .fade-in { animation: fadeIn 0.45s ease both; }
-  @keyframes fadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Study Planner</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #a8a29e; /* stone-400 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: #f5f5f4; /* stone-100 */
+        }
+        
+        /* Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        /* Modal transitions */
+        .modal-hidden {
+            display: none;
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .modal-visible {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+            transition: all 0.2s ease-out;
+        }
+        
+        /* Schedule Grid */
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: auto repeat(7, minmax(0, 1fr));
+            grid-template-rows: auto repeat(14, 4rem); /* 7am to 8pm (14 hours) */
+        }
+        .time-slot {
+            grid-column-start: 1;
+        }
+        .day-header {
+            grid-row-start: 1;
+        }
+    </style>
 </head>
-<body class="bg-pink-50 text-rose-800">
-
-<div class="container mx-auto max-w-5xl px-6 py-8">
-
-  <header class="text-center mb-8 p-6 md:py-8">
-    <h1 class="text-4xl md:text-5xl font-extrabold tracking-wide mb-2">Day2Day ✨</h1>
-    <p class="text-pink-100 font-medium text-base md:text-lg mb-2">Your daily goals, shared vibes & cute timers.</p>
-    <div class="text-sm text-pink-200">Create your cute avatar or upload a pic! Incomplete goals can ✨magically✨ carry forward to the next day for the whole squad.</div>
-  </header>
-
-  <div id="members-container" class="grid grid-cols-1 gap-8 mb-8"></div>
-
-  <div id="loader" class="text-center py-10 text-rose-500">Summoning the squad...</div>
-
-  <div id="master-calendar-container" class="bg-white p-6 rounded-3xl shadow-xl mb-6 card-hover"></div>
-
-  <div id="messenger-section" class="bg-white p-6 rounded-3xl shadow-xl mb-10 card-hover">
-    <h2 class="text-2xl font-semibold mb-4 text-fuchsia-700 flex items-center gap-3">Group Chat 💖
-      <span class="text-xs bg-pink-50 text-pink-600 px-2 py-1 rounded-full">Links preferred</span>
-    </h2>
-    <div class="flex items-center gap-3 mb-4">
-        <label for="messenger-user-select" class="font-semibold text-pink-600">I am:</label>
-        <select id="messenger-user-select" class="p-2 border border-pink-300 rounded-lg focus:ring-2 focus:ring-pink-400">
-            <option value="">-- Select your name --</option>
-        </select>
-        <button id="toggle-link-mode" class="ml-auto text-sm px-3 py-2 rounded-lg bg-pink-50 text-pink-600">Only links: ON</button>
-    </div>
-    <div id="messages-container" class="messages-container h-64 overflow-y-auto p-4 bg-rose-50 rounded-xl mb-4 flex flex-col gap-3"></div>
-    <div class="flex flex-col sm:flex-row gap-3">
-        <input type="text" id="message-input" placeholder="Share a cute link... (e.g. https://...)" class="flex-grow p-3 border border-pink-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:outline-none transition" />
-        <button id="send-message-btn" class="bg-pink-500 text-white font-semibold py-3 px-6 rounded-xl hover:bg-pink-600 transition-all duration-300 shadow-md">Send Link</button>
-    </div>
-  </div>
-
-  <div class="bg-white p-6 rounded-3xl shadow-xl card-hover">
-    <h2 class="text-2xl font-semibold mb-5 text-fuchsia-700">Add a New Member 🌸</h2>
-    <div class="flex flex-col sm:flex-row gap-4 items-center">
-      <input type="text" id="new-member-name" placeholder="What's your name, superstar?" class="flex-grow p-3 border border-pink-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:outline-none transition" />
-      <input type="file" id="new-member-avatar-file" accept="image/*" class="p-2" />
-      <button id="gen-avatar-btn" class="bg-pink-100 text-pink-700 px-3 py-2 rounded-xl">Generate Avatar</button>
-      <button id="add-member-btn" class="bg-pink-500 text-white font-semibold py-3 px-6 rounded-xl hover:bg-pink-600 transition-all duration-300 shadow-md">Join the Group!</button>
-    </div>
-  </div>
-
-  <div class="mt-6 text-sm text-pink-600 font-medium">Tip: Click a calendar day to view tasks. Use the "Carry Forward" button inside any member card to move incomplete goals from that selected day to the next day for all members.</div>
-
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, runTransaction, writeBatch, query, orderBy, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCERpjMWaks-VwF0rQl4fTUJA6alU8QnzU",
-    authDomain: "day2day-43309.firebaseapp.com",
-    projectId: "day2day-43309",
-    storageBucket: "day2day-43309.firebasestorage.app",
-    messagingSenderId: "796454338022",
-    appId: "1:796454338022:web:44db8be83228bb12606a27",
-    measurementId: "G-FVWXBE61MD"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-let allMembersData = [];
-const memberViewStates = {};
-let calendarDate = new Date();
-const timerIntervals = {};
-let currentMessengerId = localStorage.getItem('currentMessengerId') || ''; // For messenger identity
-let messengerOnlyLinks = true;
-
-function getLocalDateString(date) {
-  const offset = date.getTimezoneOffset();
-  const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
-  return adjustedDate.toISOString().split('T')[0];
-}
-const TODAY_STRING = getLocalDateString(new Date());
-
-function formatTime(milliseconds) {
-  const totalSeconds = Math.floor(milliseconds / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
-  }
-  return `${minutes}:${seconds.toString().padStart(2,'0')}`;
-}
-
-function getTotalTimeSpent(goal) {
-  let total = goal.totalTime || 0;
-  if (goal.isRunning && goal.startTime) {
-    total += Date.now() - goal.startTime;
-  }
-  return total;
-}
-
-function renderApp() {
-  const tasksByDate = {};
-  allMembersData.forEach(member => {
-    Object.keys(member.dailyTasks || {}).forEach(date => {
-      if (!tasksByDate[date]) tasksByDate[date] = 0;
-      tasksByDate[date] += (member.dailyTasks[date] || []).length;
-    });
-  });
-  renderMasterCalendar(calendarDate.getFullYear(), calendarDate.getMonth(), tasksByDate);
-  renderMembers(allMembersData);
-  updateMessengerUserSelect();
-}
-
-function renderMasterCalendar(year, month, tasksByDate) {
-  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  let calendarHtml = `
-    <div class="flex items-center justify-between mb-4 px-2">
-      <button id="prev-month-btn" class="p-2 rounded-full hover:bg-pink-100 transition" title="Previous Month">&lt;</button>
-      <h2 class="text-xl font-bold text-fuchsia-700">${monthNames[month]} ${year}</h2>
-      <button id="next-month-btn" class="p-2 rounded-full hover:bg-pink-100 transition" title="Next Month">&gt;</button>
-    </div>
-    <div class="grid grid-cols-7 gap-2 text-center text-sm font-semibold text-pink-500 px-2">
-      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-    </div>
-    <div class="grid grid-cols-7 gap-2 mt-2 px-2">`;
-  for (let i = 0; i < firstDay; i++) calendarHtml += '<div></div>';
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = getLocalDateString(new Date(year, month, day));
-    const hasTasks = tasksByDate[dateStr] > 0;
-    const isToday = dateStr === TODAY_STRING;
-    calendarHtml += `
-      <div class="calendar-day cursor-pointer p-2 rounded-lg ${hasTasks ? 'has-tasks' : ''} ${isToday ? 'is-today' : ''} hover:bg-pink-200" data-date="${dateStr}" title="Click to view tasks for ${dateStr}">
-        ${day}
-      </div>
-    `;
-  }
-  calendarHtml += '</div>';
-  document.getElementById('master-calendar-container').innerHTML = calendarHtml;
-}
-
-function renderMembers(members) {
-  const container = document.getElementById('members-container');
-  container.innerHTML = '';
-  if (members.length === 0) {
-    document.getElementById('loader').style.display = 'none';
-    container.innerHTML = '<p class="text-center text-pink-400 col-span-1">It\'s a bit lonely... be the first to join the party! 💖</p>';
-    return;
-  }
-  members.forEach(member => {
-    const memberCard = document.createElement('div');
-    memberCard.className = 'bg-gradient-to-r from-rose-50 to-pink-50 p-6 rounded-3xl shadow-lg flex flex-col fade-in';
-    memberCard.setAttribute('data-id', member.id);
-    const selectedDate = memberViewStates[member.id] || TODAY_STRING;
-    const goalsForSelectedDate = (member.dailyTasks?.[selectedDate] || []).sort((a,b) => {
-      if(a.isRunning !== b.isRunning) return b.isRunning - a.isRunning;
-      return a.completed - b.completed;
-    });
-    const totalTasks = goalsForSelectedDate.length;
-    const completedTasks = goalsForSelectedDate.filter(g => g.completed).length;
-    const progressPercent = totalTasks === 0 ? 0 : (completedTasks/totalTasks)*100;
-    const totalTimeSpentToday = goalsForSelectedDate.reduce((acc, goal) => acc+getTotalTimeSpent(goal), 0);
-
-    const avatarHtml = member.avatarData ?
-      `<img src="${member.avatarData}" alt="avatar" class="avatar small" />` :
-      `<div class="avatar small" style="background:${member.avatarColor || '#ec4899'}">${(member.name||'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>`;
-
-    const goalsHtml = totalTasks > 0
-      ? goalsForSelectedDate.map(goal => {
-        const totalTime = getTotalTimeSpent(goal);
-        const isRunning = goal.isRunning || false;
-        const timerDisplay = formatTime(totalTime);
-        const disabledCheckbox = isRunning ? 'disabled' : '';
-        return `
-        <div class="goal-item flex items-center justify-between p-3 rounded-xl hover:bg-pink-100 transition group ${isRunning ? 'timer-running bg-rose-50' : ''}" data-goal-id="${goal.id}" data-goal-date="${selectedDate}">
-          <div class="flex items-center flex-grow">
-            <input type="checkbox" class="goal-checkbox h-5 w-5 rounded text-pink-600 focus:ring-pink-500" ${goal.completed ? 'checked' : ''} ${disabledCheckbox} />
-            <div class="ml-3 flex-grow">
-              <span class="${goal.completed ? 'line-through text-pink-300' : 'text-rose-900'} font-semibold">${goal.text}</span>
-              <div class="text-xs text-rose-400 mt-1">
-                <span class="timer-display ${isRunning ? 'text-rose-600' : 'text-pink-500'}">${timerDisplay}</span>
-                ${goal.completedTime ? `<span class="ml-2 text-fuchsia-500">Completed: ${new Date(goal.completedTime).toLocaleTimeString()}</span>` : ''}
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 ml-3">
-            ${!goal.completed ? (isRunning
-              ? `<div class="stop-btn timer-control-btn" data-action="stop" title="Stop Timer">⏸</div><div class="complete-btn timer-control-btn" data-action="complete" title="Complete Goal">✓</div>`
-              : `<div class="play-btn timer-control-btn" data-action="start" title="Start Timer">▶</div>`
-            ) : ''}
-            <button class="delete-goal-btn text-rose-400 hover:text-red-500 opacity-0 group-hover:opacity-100" title="Delete Goal">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+<body class="bg-stone-100 text-stone-800 h-full flex">
+    
+    <!-- Sidebar Navigation -->
+    <nav class="w-16 md:w-64 bg-white border-r border-stone-200 flex flex-col p-4 transition-all duration-300">
+        <div class="flex items-center justify-center md:justify-start space-x-2 mb-10 px-2">
+            <i data-lucide="book-check" class="w-8 h-8 text-indigo-600"></i>
+            <h1 class="text-xl font-bold text-stone-800 hidden md:block">StudyPlan</h1>
+        </div>
+        
+        <ul class="space-y-2">
+            <li>
+                <a href="#" id="nav-dashboard" class="flex items-center space-x-3 p-3 rounded-lg text-indigo-600 bg-indigo-50 font-medium">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span class="hidden md:block">Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" id="nav-tasks" class="flex items-center space-x-3 p-3 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-stone-800 font-medium">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span class="hidden md:block">Tasks</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" id="nav-schedule" class="flex items-center space-x-3 p-3 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-stone-800 font-medium">
+                    <i data-lucide="calendar" class="w-5 h-5"></i>
+                    <span class="hidden md:block">Schedule</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" id="nav-goals" class="flex items-center space-x-3 p-3 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-stone-800 font-medium">
+                    <i data-lucide="target" class="w-5 h-5"></i>
+                    <span class="hidden md:block">Goals</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="mt-auto">
+            <button id="enable-notifications-btn" class="w-full flex items-center justify-center md:justify-start space-x-3 p-3 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-stone-800 font-medium">
+                <i data-lucide="bell" class="w-5 h-5"></i>
+                <span class="hidden md:block">Enable Notifications</span>
             </button>
-          </div>
+            <div class="mt-2 text-center md:text-left">
+                <span class="text-xs text-stone-500 hidden md:inline">User ID: </span>
+                <span id="user-id-display" class="text-xs text-stone-500 font-mono break-all">Loading...</span>
+            </div>
+            <!-- Credits Added -->
+            <div class="mt-4 text-center md:text-left">
+                <p class="text-xs text-stone-500">✨ Created by Radhika</p>
+            </div>
         </div>
-        `;
-      }).join('')
-      : '<p class="text-pink-400 p-4">A fresh start! No goals for this day. 🌸</p>';
-
-      memberCard.innerHTML = `
-        <div class="flex justify-between items-start mb-5">
-          <div class="flex items-center gap-3">
-            ${avatarHtml}
-            <h3 class="text-2xl font-extrabold text-pink-800">${member.name}</h3>
-          </div>
-          <div class="flex items-center gap-3">
-            <button class="carry-forward-btn text-sm bg-pink-50 text-pink-700 px-3 py-2 rounded-lg">Carry Forward Incomplete</button>
-            <button class="delete-member-btn text-rose-400 hover:text-red-600 text-2xl font-bold" title="Delete Member">&times;</button>
-          </div>
+    </nav>
+    
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto p-4 md:p-8">
+        
+        <!-- View: Dashboard -->
+        <div id="view-dashboard" class="space-y-6">
+            <h2 class="text-3xl font-bold text-stone-800">Dashboard</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Today's Tasks -->
+                <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">Today's Tasks</h3>
+                        <button id="dash-add-task-btn" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center space-x-1">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Add Task</span>
+                        </button>
+                    </div>
+                    <div id="dashboard-task-list" class="space-y-3 max-h-64 overflow-y-auto pr-2">
+                        <!-- Task items will be injected here -->
+                        <p id="dash-no-tasks" class="text-stone-500">No tasks due today. Add one!</p>
+                    </div>
+                </div>
+                
+                <!-- Progress -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-xl font-semibold mb-4">This Week</h3>
+                    <div class="space-y-4">
+                        <div class="text-center">
+                            <p class="text-4xl font-bold text-indigo-600" id="progress-completed-count">0</p>
+                            <p class="text-sm text-stone-500">Tasks Completed</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-4xl font-bold text-stone-700" id="progress-pending-count">0</p>
+                            <p class="text-sm text-stone-500">Tasks Pending</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Upcoming Deadlines -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                <h3 class="text-xl font-semibold mb-4">Upcoming Deadlines</h3>
+                <div id="dashboard-upcoming-list" class="space-y-3">
+                    <!-- Upcoming tasks will be injected here -->
+                    <p id="dash-no-upcoming" class="text-stone-500">No upcoming deadlines.</p>
+                </div>
+            </div>
         </div>
-        <div class="flex items-center gap-3 mb-5">
-          <label class="font-semibold text-pink-600">Tasks for:</label>
-          <input type="date" class="member-date-picker p-2 border border-pink-300 rounded-lg" value="${selectedDate}" />
+        
+        <!-- View: Tasks -->
+        <div id="view-tasks" class="space-y-6 hidden">
+            <div class="flex justify-between items-center">
+                <h2 class="text-3xl font-bold text-stone-800">Tasks</h2>
+                <button id="tasks-add-task-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Add New Task</span>
+                </button>
+            </div>
+            
+            <!-- Filters -->
+            <div class="flex space-x-4">
+                <select id="task-filter-subject" class="bg-white border border-stone-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="all">All Subjects</option>
+                    <!-- Subjects will be populated dynamically -->
+                </select>
+                <select id="task-filter-status" class="bg-white border border-stone-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+            
+            <!-- Task List -->
+            <div id="tasks-list-container" class="bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                 <div id="tasks-list" class="space-y-3">
+                    <!-- Full task list injected here -->
+                    <p id="tasks-no-tasks" class="text-stone-500 p-4 text-center">No tasks found. Add one!</p>
+                 </div>
+            </div>
         </div>
-        <div class="mb-5">
-          <div class="flex justify-between items-center mb-1 text-sm text-pink-600 font-semibold">
-            <span>Progress</span>
-            <span>${completedTasks} / ${totalTasks}</span>
-          </div>
-          <div class="w-full bg-pink-200 rounded-full h-3">
-            <div class="bg-gradient-to-r from-fuchsia-500 to-pink-500 h-3 rounded-full transition-all duration-400" style="width:${progressPercent}%;"></div>
-          </div>
-          <div class="text-xs mt-2 text-pink-500 font-medium">Total time today: ${formatTime(totalTimeSpentToday)}</div>
+        
+        <!-- View: Schedule -->
+        <div id="view-schedule" class="space-y-6 hidden">
+            <div class="flex justify-between items-center">
+                <h2 class="text-3xl font-bold text-stone-800">Weekly Schedule</h2>
+                <button id="schedule-add-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Add Block</span>
+                </button>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 overflow-x-auto">
+                <div class="schedule-grid min-w-[800px]">
+                    <!-- Time Column -->
+                    <div class="time-slot border-r border-stone-200"></div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">7:00 AM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">8:00 AM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">9:00 AM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">10:00 AM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">11:00 AM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">12:00 PM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">1:00 PM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">2:00 PM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">3:00 PM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">4:00 PM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">5:00 PM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">6:00 PM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-b border-r border-stone-200 pt-1">7:00 PM</div>
+                    <div class="time-slot h-24 flex items-start justify-end pr-2 text-xs text-stone-500 border-r border-stone-200 pt-1">8:00 PM</div>
+                    
+                    <!-- Day Columns -->
+                    <div class="day-header text-center font-semibold p-2 border-b border-stone-200" style="grid-column: 2;">Mon</div>
+                    <div class="day-header text-center font-semibold p-2 border-b border-stone-200" style="grid-column: 3;">Tue</div>
+                    <div class="day-header text-center font-semibold p-2 border-b border-stone-200" style="grid-column: 4;">Wed</div>
+                    <div class="day-header text-center font-semibold p-2 border-b border-stone-200" style="grid-column: 5;">Thu</div>
+                    <div class="day-header text-center font-semibold p-2 border-b border-stone-200" style="grid-column: 6;">Fri</div>
+                    <div class="day-header text-center font-semibold p-2 border-b border-stone-200" style="grid-column: 7;">Sat</div>
+                    <div class="day-header text-center font-semibold p-2 border-b border-stone-200" style="grid-column: 8;">Sun</div>
+                    
+                    <!-- Day Cells (for grid lines) -->
+                    <div class="col-span-1 border-r border-stone-200" style="grid-column: 2; grid-row: 2 / span 14;"></div>
+                    <div class="col-span-1 border-r border-stone-200" style="grid-column: 3; grid-row: 2 / span 14;"></div>
+                    <div class="col-span-1 border-r border-stone-200" style="grid-column: 4; grid-row: 2 / span 14;"></div>
+                    <div class="col-span-1 border-r border-stone-200" style="grid-column: 5; grid-row: 2 / span 14;"></div>
+                    <div class="col-span-1 border-r border-stone-200" style="grid-column: 6; grid-row: 2 / span 14;"></div>
+                    <div class="col-span-1 border-r border-stone-200" style="grid-column: 7; grid-row: 2 / span 14;"></div>
+                    <div class="col-span-1 border-r border-stone-200" style="grid-column: 8; grid-row: 2 / span 14;"></div>
+                    
+                    <!-- Schedule blocks will be injected here -->
+                    <div id="schedule-block-container" class="col-start-2 col-span-7 row-start-2 row-span-14 relative">
+                        <!-- Example block -->
+                        <!-- <div class="absolute w-full p-2 bg-indigo-100 border-l-4 border-indigo-500 rounded-r-lg" style="grid-column: 1; top: 0; height: 16rem;"> ... </div> -->
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="goals-list flex-grow overflow-y-auto max-h-80 pr-3">${goalsHtml}</div>
-        <div class="mt-6 pt-5 border-t border-pink-200 flex flex-col sm:flex-row gap-3">
-          <input type="text" class="new-goal-input flex-grow p-3 border border-pink-300 rounded-xl" placeholder="What's the plan, girly? ✨" />
-          <button class="add-goal-btn bg-pink-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-pink-700 shadow-md transition">Add Goal</button>
+        
+        <!-- View: Goals -->
+        <div id="view-goals" class="space-y-6 hidden">
+            <div class="flex justify-between items-center">
+                <h2 class="text-3xl font-bold text-stone-800">My Goals</h2>
+                <button id="goals-add-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center space-x-2">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Add New Goal</span>
+                </button>
+            </div>
+            
+            <div id="goals-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Goal cards will be injected here -->
+                <p id="goals-no-goals" class="text-stone-500 p-4 text-center col-span-full">No goals set yet. Add one!</p>
+            </div>
         </div>
-      `;
+    </main>
+    
+    <!-- Modal: Add/Edit Task -->
+    <div id="task-modal" class="modal-hidden fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center p-4">
+        <form id="task-form" class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 id="task-modal-title" class="text-2xl font-semibold">Add New Task</h3>
+                <button type="button" class="close-modal-btn text-stone-500 hover:text-stone-800">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <input type="hidden" id="task-id">
+            
+            <div>
+                <label for="task-title" class="block text-sm font-medium text-stone-700 mb-1">Title</label>
+                <input type="text" id="task-title" required class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            
+            <div>
+                <label for="task-subject" class="block text-sm font-medium text-stone-700 mb-1">Subject</label>
+                <input type="text" id="task-subject" placeholder="e.g., Math, History, CS101" class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            
+            <div>
+                <label for="task-due-date" class="block text-sm font-medium text-stone-700 mb-1">Due Date</label>
+                <input type="datetime-local" id="task-due-date" required class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            
+            <div>
+                <label for="task-priority" class="block text-sm font-medium text-stone-700 mb-1">Priority</label>
+                <select id="task-priority" class="w-full border border-stone-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button type="button" class="close-modal-btn px-4 py-2 rounded-lg text-stone-700 bg-stone-100 hover:bg-stone-200 font-medium">Cancel</button>
+                <button type="submit" class="px-6 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 font-medium">Save Task</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Modal: Add/Edit Goal -->
+    <div id="goal-modal" class="modal-hidden fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center p-4">
+        <form id="goal-form" class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 id="goal-modal-title" class="text-2xl font-semibold">Add New Goal</h3>
+                <button type="button" class="close-modal-btn text-stone-500 hover:text-stone-800">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <input type="hidden" id="goal-id">
+            
+            <div>
+                <label for="goal-title" class="block text-sm font-medium text-stone-700 mb-1">Goal Title</label>
+                <input type="text" id="goal-title" required class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            
+            <div>
+                <label for="goal-description" class="block text-sm font-medium text-stone-700 mb-1">Description</label>
+                <textarea id="goal-description" rows="3" class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+            
+            <div>
+                <label for="goal-target-date" class="block text-sm font-medium text-stone-700 mb-1">Target Date</label>
+                <input type="date" id="goal-target-date" class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button type="button" class="close-modal-btn px-4 py-2 rounded-lg text-stone-700 bg-stone-100 hover:bg-stone-200 font-medium">Cancel</button>
+                <button type="submit" class="px-6 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 font-medium">Save Goal</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Modal: Add/Edit Schedule Block -->
+    <div id="schedule-modal" class="modal-hidden fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center p-4">
+        <form id="schedule-form" class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 id="schedule-modal-title" class="text-2xl font-semibold">Add Study Block</h3>
+                <button type="button" class="close-modal-btn text-stone-500 hover:text-stone-800">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <input type="hidden" id="schedule-id">
+            
+            <div>
+                <label for="schedule-title" class="block text-sm font-medium text-stone-700 mb-1">Title</label>
+                <input type="text" id="schedule-title" required placeholder="e.g., Math Problems" class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            
+            <div>
+                <label for="schedule-day" class="block text-sm font-medium text-stone-700 mb-1">Day of Week</label>
+                <select id="schedule-day" class="w-full border border-stone-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="1">Monday</option>
+                    <option value="2">Tuesday</option>
+                    <option value="3">Wednesday</option>
+                    <option value="4">Thursday</option>
+                    <option value="5">Friday</option>
+                    <option value="6">Saturday</option>
+                    <option value="0">Sunday</option>
+                </select>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="schedule-start-time" class="block text-sm font-medium text-stone-700 mb-1">Start Time</label>
+                    <input type="time" id="schedule-start-time" required step="900" class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label for="schedule-end-time" class="block text-sm font-medium text-stone-700 mb-1">End Time</label>
+                    <input type="time" id="schedule-end-time" required step="900" class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+            
+            <div>
+                <label for="schedule-color" class="block text-sm font-medium text-stone-700 mb-1">Color</label>
+                <select id="schedule-color" class="w-full border border-stone-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="indigo">Indigo</option>
+                    <option value="sky">Sky Blue</option>
+                    <option value="emerald">Emerald</option>
+                    <option value="amber">Amber</option>
+                    <option value="rose">Rose</option>
+                </select>
+            </div>
+            
+            <div class="flex justify-between">
+                <button type="button" id="schedule-delete-btn" class="px-4 py-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200 font-medium hidden">Delete</button>
+                <div class="flex space-x-3 ml-auto">
+                    <button type="button" class="close-modal-btn px-4 py-2 rounded-lg text-stone-700 bg-stone-100 hover:bg-stone-200 font-medium">Cancel</button>
+                    <button type="submit" class="px-6 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 font-medium">Save Block</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Custom Message Box -->
+    <div id="message-box" class="modal-hidden fixed bottom-10 right-10 bg-green-600 text-white p-4 rounded-lg shadow-xl transition-all duration-300 z-50">
+        <p id="message-text"></p>
+    </div>
 
-      container.appendChild(memberCard);
+    <!-- Firebase and App Logic -->
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, 
+            onSnapshot, collection, query, where, setLogLevel
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-      goalsForSelectedDate.forEach(goal => {
-        if (goal.isRunning) {
-          startTimerDisplay(member.id, selectedDate, goal.id);
-        }
-      });
-  });
-}
+        // --- Global State ---
+        let db;
+        let auth;
+        let userId;
+        let currentView = 'dashboard';
+        let allTasks = [];
+        let allGoals = [];
+        let allScheduleBlocks = [];
+        
+        // Firestore collection references
+        let tasksCollection, goalsCollection, scheduleCollection;
+        
+        // Unsubscribe functions for onSnapshot listeners
+        let unsubscribeTasks, unsubscribeGoals, unsubscribeSchedule;
 
-// ---- MESSENGER FUNCTIONS ----
-function updateMessengerUserSelect() {
-    const select = document.getElementById('messenger-user-select');
-    const currentValue = select.value;
-    select.innerHTML = '<option value="">-- Select your name --</option>';
-    allMembersData.forEach(member => {
-        const option = document.createElement('option');
-        option.value = member.id;
-        option.textContent = member.name;
-        select.appendChild(option);
-    });
-    if (allMembersData.some(m => m.id === currentValue)) {
-        select.value = currentValue;
-    } else if (currentMessengerId && allMembersData.some(m=>m.id===currentMessengerId)) {
-        select.value = currentMessengerId;
-    } else {
-        currentMessengerId = '';
-        localStorage.removeItem('currentMessengerId');
-    }
-}
+        // --- App Initialization ---
+        
+        // Use provided Firebase config
+        const sampleConfig = {
+            apiKey: "AIzaSyCERpjMWaks-VwF0rQl4fTUJA6alU8QnzU",
+            authDomain: "day2day-43309.firebaseapp.com",
+            projectId: "day2day-43309",
+            storageBucket: "day2day-43309.firebasestorage.app",
+            messagingSenderId: "796454338022",
+            appId: "1:796454338022:web:44db8be83228bb12606a27",
+            measurementId: "G-FVWXBE61MD"
+        };
+        
+        // PRIORITIZE environment variables. Use sampleConfig as fallback.
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : sampleConfig;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-function renderMessages(messages) {
-    const container = document.getElementById('messages-container');
-    container.innerHTML = '';
-    if (messages.length === 0) {
-        container.innerHTML = '<p class="text-center text-rose-400">The chat is quiet... share something cute! ✨</p>';
-        return;
-    }
-    messages.forEach(msg => {
-        const msgData = msg.data();
-        const isSentByCurrentUser = msgData.senderId === currentMessengerId;
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message flex flex-col ${isSentByCurrentUser ? 'sent' : 'received'}`;
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug'); // Enable detailed Firestore logging
 
-        const senderName = document.createElement('span');
-        senderName.className = "font-bold text-sm text-pink-700";
-        senderName.textContent = msgData.senderName;
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        console.log("Auth state changed: User is signed in.", user.uid);
+                        userId = user.uid;
+                        document.getElementById('user-id-display').textContent = userId;
+                        // User is signed in, set up database paths
+                        tasksCollection = collection(db, `artifacts/${appId}/users/${userId}/tasks`);
+                        goalsCollection = collection(db, `artifacts/${appId}/users/${userId}/goals`);
+                        scheduleCollection = collection(db, `artifacts/${appId}/users/${userId}/scheduleBlocks`);
+                        
+                        // Start listening to data
+                        attachDataListeners();
+                        
+                    } else {
+                        console.log("Auth state changed: User is signed out.");
+                        // User is signed out, try to sign in
+                        await attemptSignIn();
+                    }
+                });
+                
+                // Initial sign-in attempt
+                if (!auth.currentUser) {
+                    console.log("No current user on init, attempting sign in.");
+                    await attemptSignIn();
+                }
 
-        const messageText = document.createElement('p');
-        messageText.className = "text-slate-800";
-        // highlight links
-        const text = msgData.text || '';
-        const linkMatch = text.match(/(https?:\/\/\S+)/);
-        if (linkMatch) {
-          const a = document.createElement('a');
-          a.href = linkMatch[1];
-          a.target = '_blank';
-          a.rel = 'noopener';
-          a.className = 'link-bubble';
-          a.textContent = linkMatch[1];
-          messageText.appendChild(a);
-        } else {
-          messageText.textContent = text;
-        }
-
-        const timestamp = document.createElement('span');
-        timestamp.className = "text-xs text-slate-500 mt-1 self-end";
-        timestamp.textContent = msgData.createdAt ? new Date(msgData.createdAt.toDate()).toLocaleString() : '';
-
-        messageDiv.appendChild(senderName);
-        messageDiv.appendChild(messageText);
-        messageDiv.appendChild(timestamp);
-        container.appendChild(messageDiv);
-    });
-    container.scrollTop = container.scrollHeight;
-}
-// ---- END MESSENGER FUNCTIONS ----
-
-function startTimerDisplay(memberId, date, goalId) {
-  const intervalKey = `${memberId}_${date}_${goalId}`;
-  if (timerIntervals[intervalKey]) clearInterval(timerIntervals[intervalKey]);
-  timerIntervals[intervalKey] = setInterval(() => {
-    updateTimerDisplay(memberId, date, goalId);
-  }, 1000);
-}
-function stopTimerDisplay(memberId, date, goalId) {
-  const intervalKey = `${memberId}_${date}_${goalId}`;
-  if (timerIntervals[intervalKey]) { clearInterval(timerIntervals[intervalKey]); delete timerIntervals[intervalKey]; }
-}
-function updateTimerDisplay(memberId, date, goalId) {
-  const member = allMembersData.find(m => m.id === memberId);
-  if (!member || !member.dailyTasks?.[date]) return;
-  const goal = member.dailyTasks[date].find(g => g.id === goalId);
-  if (!goal || !goal.isRunning) return;
-  const goalElement = document.querySelector(`[data-goal-id="${goalId}"][data-goal-date="${date}"] .timer-display`);
-  if (goalElement) {
-    const totalTime = getTotalTimeSpent(goal);
-    goalElement.textContent = formatTime(totalTime);
-  }
-}
-
-async function handleMemberEvents(e) {
-  const memberCard = e.target.closest('.bg-gradient-to-r');
-  if (!memberCard) return;
-  const memberId = memberCard.dataset.id;
-  const memberDocRef = doc(db, 'members', memberId);
-
-  if (e.target.classList.contains('member-date-picker')) {
-    memberViewStates[memberId] = e.target.value;
-    renderMembers(allMembersData);
-    return;
-  }
-
-  if (e.target.closest('.delete-member-btn')) {
-    if (confirm('Are you sure you want to delete this member?')) {
-      await deleteDoc(memberDocRef);
-    }
-    return;
-  }
-
-  if (e.target.classList.contains('add-goal-btn')) {
-    const input = memberCard.querySelector('.new-goal-input');
-    const text = input.value.trim();
-    const date = memberCard.querySelector('.member-date-picker').value;
-    if (text && date) {
-      const newGoal = { id: crypto.randomUUID(), text, completed: false, startTime: null, totalTime: 0, isRunning: false, completedTime: null };
-      await updateDoc(memberDocRef, { [`dailyTasks.${date}`]: arrayUnion(newGoal) });
-      input.value = '';
-    }
-    return;
-  }
-
-  if (e.target.closest('.carry-forward-btn')) {
-    const selectedDate = memberCard.querySelector('.member-date-picker').value;
-    if (!selectedDate) return alert('Select a date first');
-    if (!confirm(`Carry forward ALL incomplete goals from ${selectedDate} to next day for everyone?`)) return;
-    await moveIncompleteGoalsForAll(selectedDate);
-    return;
-  }
-
-  const goalItem = e.target.closest('[data-goal-id]');
-  if (!goalItem) return;
-  const { goalId, goalDate } = goalItem.dataset;
-
-  if (e.target.closest('.timer-control-btn')) {
-    const action = e.target.closest('.timer-control-btn').dataset.action;
-    await handleTimerAction(memberDocRef, goalDate, goalId, action);
-    return;
-  }
-
-  try {
-    await runTransaction(db, async (transaction) => {
-      const memberDoc = await transaction.get(memberDocRef);
-      if (!memberDoc.exists()) throw "Doc does not exist!";
-      const tasks = memberDoc.data().dailyTasks || {};
-      const currentGoals = tasks[goalDate] || [];
-      let updatedGoals;
-      if (e.target.closest('.delete-goal-btn')) {
-        const goalToDelete = currentGoals.find(g => g.id === goalId);
-        if (goalToDelete?.isRunning) stopTimerDisplay(memberId, goalDate, goalId);
-        updatedGoals = currentGoals.filter(g => g.id !== goalId);
-      } else if (e.target.classList.contains('goal-checkbox')) {
-        updatedGoals = currentGoals.map(g => {
-          if (g.id === goalId) {
-            const checked = e.target.checked;
-            const updatedGoal = { ...g, completed: checked };
-            if (checked && g.isRunning) {
-              updatedGoal.isRunning = false; updatedGoal.totalTime = getTotalTimeSpent(g); updatedGoal.completedTime = Date.now(); stopTimerDisplay(memberId, goalDate, goalId);
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showMessage("Error connecting to app. Please refresh.", "error");
             }
-            return updatedGoal;
-          }
-          return g;
-        });
-      } else {
-        return;
-      }
-      tasks[goalDate] = updatedGoals;
-      transaction.update(memberDocRef, { dailyTasks: tasks });
-    });
-  } catch (error) { console.error("Transaction failed: ", error); }
-}
-
-async function handleTimerAction(memberDocRef, date, goalId, action) {
-  try {
-    await runTransaction(db, async (transaction) => {
-      const memberDoc = await transaction.get(memberDocRef);
-      if (!memberDoc.exists()) throw "Doc does not exist!";
-      const tasks = memberDoc.data().dailyTasks || {};
-      const currentGoals = tasks[date] || [];
-      const memberId = memberDoc.id;
-      const now = Date.now();
-      const updatedGoals = currentGoals.map(goal => {
-        if (goal.id === goalId) {
-          const updatedGoal = { ...goal };
-          switch (action) {
-            case 'start':
-              currentGoals.forEach(g => { if (g.isRunning && g.id !== goalId) { g.totalTime = (g.totalTime || 0) + (now - g.startTime); g.isRunning = false; g.startTime = null; stopTimerDisplay(memberId, date, g.id); } });
-              updatedGoal.isRunning = true; updatedGoal.startTime = now; startTimerDisplay(memberId, date, goalId);
-              break;
-            case 'stop':
-              if (updatedGoal.isRunning && updatedGoal.startTime) { updatedGoal.totalTime = (updatedGoal.totalTime || 0) + (now - updatedGoal.startTime); }
-              updatedGoal.isRunning = false; updatedGoal.startTime = null; stopTimerDisplay(memberId, date, goalId);
-              break;
-            case 'complete':
-              if (updatedGoal.isRunning && updatedGoal.startTime) { updatedGoal.totalTime = (updatedGoal.totalTime || 0) + (now - updatedGoal.startTime); }
-              updatedGoal.isRunning = false; updatedGoal.completed = true; updatedGoal.completedTime = now; updatedGoal.startTime = null; stopTimerDisplay(memberId, date, goalId);
-              break;
-          }
-          return updatedGoal;
-        } else if (action === 'start' && goal.isRunning) {
-          const stoppedGoal = { ...goal };
-          if (stoppedGoal.startTime) stoppedGoal.totalTime = (stoppedGoal.totalTime || 0) + (Date.now() - stoppedGoal.startTime);
-          stoppedGoal.isRunning = false; stoppedGoal.startTime = null; stopTimerDisplay(memberId, date, goal.id);
-          return stoppedGoal;
         }
-        return goal;
-      });
-      tasks[date] = updatedGoals;
-      transaction.update(memberDocRef, { dailyTasks: tasks });
-    });
-  } catch (error) { console.error("Timer action failed: ", error); }
-}
+        
+        async function attemptSignIn() {
+             try {
+                // ONLY use custom token if it's defined AND we are using the environment's config
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && typeof __firebase_config !== 'undefined') {
+                    console.log("Attempting sign in with custom token.");
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    // Otherwise, sign in anonymously (this will work with the sampleConfig if env config is missing)
+                    console.log("Attempting anonymous sign in.");
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Error signing in:", error);
+                showMessage("Could not sign in.", "error");
+            }
+        }
+        
+        function attachDataListeners() {
+            // Detach previous listeners if they exist
+            if (unsubscribeTasks) unsubscribeTasks();
+            if (unsubscribeGoals) unsubscribeGoals();
+            if (unsubscribeSchedule) unsubscribeSchedule();
+            
+            console.log("Attaching data listeners for userId:", userId);
 
-async function moveIncompleteGoalsForAll(date) {
-  const nextDateObj = new Date(date);
-  nextDateObj.setDate(nextDateObj.getDate() + 1);
-  const nextDate = getLocalDateString(nextDateObj);
-  try {
-    const membersSnapshot = await getDocs(collection(db, 'members'));
-    const batch = writeBatch ? null : null;
-    const promises = [];
-    membersSnapshot.forEach(memberDoc => {
-      const memberRef = doc(db, 'members', memberDoc.id);
-      promises.push(runTransaction(db, async (t) => {
-        const md = await t.get(memberRef);
-        if (!md.exists()) return;
-        const data = md.data();
-        const tasks = data.dailyTasks || {};
-        const todaysGoals = tasks[date] || [];
-        if (!todaysGoals || todaysGoals.length === 0) return;
-        const incomplete = todaysGoals.filter(g => !g.completed);
-        if (incomplete.length === 0) return;
-        const nextGoals = (tasks[nextDate] || []).concat(incomplete.map(g=>({ ...g })));
-        const remainingToday = todaysGoals.filter(g => g.completed);
-        tasks[nextDate] = nextGoals;
-        tasks[date] = remainingToday;
-        t.update(memberRef, { dailyTasks: tasks });
-      }));
-    });
-    await Promise.all(promises);
-    alert('Carry-forward complete! Incomplete goals have been moved. ✨');
-  } catch (err) {
-    console.error('Carry forward failed:', err);
-    alert('Carry forward failed — check console.');
-  }
-}
+            // Listen for Tasks
+            unsubscribeTasks = onSnapshot(tasksCollection, (snapshot) => {
+                console.log("Received task snapshot.");
+                allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAll();
+            }, (error) => {
+                console.error("Error fetching tasks:", error);
+            });
+            
+            // Listen for Goals
+            unsubscribeGoals = onSnapshot(goalsCollection, (snapshot) => {
+                console.log("Received goals snapshot.");
+                allGoals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderGoals();
+            }, (error) => {
+                console.error("Error fetching goals:", error);
+            });
+            
+            // Listen for Schedule Blocks
+            unsubscribeSchedule = onSnapshot(scheduleCollection, (snapshot) => {
+                console.log("Received schedule snapshot.");
+                allScheduleBlocks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderSchedule();
+            }, (error) => {
+                console.error("Error fetching schedule:", error);
+            });
+        }
+        
+        // --- Render Functions ---
+        
+        function renderAll() {
+            // Re-render all components that depend on task data
+            renderDashboardTasks();
+            renderDashboardProgress();
+            renderDashboardUpcoming();
+            renderTasksList();
+            updateSubjectFilter();
+            
+            // Re-create icons
+            if (window.renderIcons) window.renderIcons();
+        }
+        
+        // Dashboard: Today's Tasks
+        function renderDashboardTasks() {
+            const listEl = document.getElementById('dashboard-task-list');
+            if (!listEl) return; // Guard clause
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            const todaysTasks = allTasks.filter(task => 
+                !task.isCompleted && task.dueDate?.startsWith(today)
+            ).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+            
+            if (todaysTasks.length === 0) {
+                listEl.innerHTML = '<p id="dash-no-tasks" class="text-stone-500">No tasks due today. Add one!</p>';
+            } else {
+                listEl.innerHTML = todaysTasks.map(task => 
+                    createTaskItemHTML(task)
+                ).join('');
+            }
+            
+            // Add this line
+            if (window.renderIcons) window.renderIcons();
+        }
+        
+        // Dashboard: Progress
+        function renderDashboardProgress() {
+            const completedCountEl = document.getElementById('progress-completed-count');
+            const pendingCountEl = document.getElementById('progress-pending-count');
+            
+            const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            
+            let completed = 0;
+            let pending = 0;
+            
+            allTasks.forEach(task => {
+                const taskDueDate = new Date(task.dueDate);
+                // Check tasks due this week (or completed this week)
+                if (taskDueDate > oneWeekAgo) {
+                    if (task.isCompleted) {
+                        completed++;
+                    } else {
+                        pending++;
+                    }
+                }
+            });
+            
+            if (completedCountEl) completedCountEl.textContent = completed;
+            if (pendingCountEl) pendingCountEl.textContent = pending;
+        }
 
-function generateAvatarDataUrl(name, color) {
-  const initials = (name||'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
-  const size = 128; const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = color || '#ec4899'; ctx.fillRect(0,0,size,size);
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 56px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(initials, size/2, size/2);
-  return canvas.toDataURL('image/png');
-}
+        // Dashboard: Upcoming
+        function renderDashboardUpcoming() {
+            const listEl = document.getElementById('dashboard-upcoming-list');
+            if (!listEl) return; // Guard clause
 
-// Main
-function main() {
-  onSnapshot(collection(db, 'members'), (snapshot) => {
-    document.getElementById('loader').style.display = 'none';
-    allMembersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-    renderApp();
-  }, (error) => {
-    console.error("Error loading members:", error);
-    document.getElementById('loader').innerHTML = 'Error loading data.';
-  });
+            const today = new Date();
+            const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            
+            const upcomingTasks = allTasks.filter(task => {
+                const dueDate = new Date(task.dueDate);
+                return !task.isCompleted && dueDate > today && dueDate <= nextWeek;
+            }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5); // Max 5
+            
+            if (upcomingTasks.length === 0) {
+                listEl.innerHTML = '<p id="dash-no-upcoming" class="text-stone-500">No upcoming deadlines.</p>';
+            } else {
+                listEl.innerHTML = upcomingTasks.map(task => {
+                    return `
+                        <div class="flex justify-between items-center p-3 bg-stone-50 rounded-lg">
+                            <div>
+                                <p class="font-medium">${task.title}</p>
+                                <p class="text-sm text-stone-500">${task.subject || 'No Subject'} - ${formatDate(task.dueDate, true)}</p>
+                            </div>
+                            ${getPriorityBadge(task.priority)}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        // Tasks View: Full List
+        function renderTasksList() {
+            const listEl = document.getElementById('tasks-list');
+            if (!listEl) return; // Guard clause
 
-  const messagesQuery = query(collection(db, 'messages'), orderBy('createdAt', 'asc'));
-  onSnapshot(messagesQuery, (snapshot) => { renderMessages(snapshot.docs); }, (error) => { console.error("Error loading messages: ", error); });
+            const subjectFilterEl = document.getElementById('task-filter-subject');
+            const statusFilterEl = document.getElementById('task-filter-status');
+            const subjectFilter = subjectFilterEl ? subjectFilterEl.value : 'all';
+            const statusFilter = statusFilterEl ? statusFilterEl.value : 'all';
+            
+            let filteredTasks = allTasks;
+            
+            if (subjectFilter !== 'all') {
+                filteredTasks = filteredTasks.filter(task => task.subject === subjectFilter);
+            }
+            if (statusFilter !== 'all') {
+                const isCompleted = (statusFilter === 'completed');
+                filteredTasks = filteredTasks.filter(task => !!task.isCompleted === isCompleted);
+            }
+            
+            filteredTasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+            
+            if (filteredTasks.length === 0) {
+                listEl.innerHTML = '<p id="tasks-no-tasks" class="text-stone-500 p-4 text-center">No tasks found. Add one!</p>';
+            } else {
+                listEl.innerHTML = filteredTasks.map(task => 
+                    createTaskItemHTML(task, true) // 'true' for full view
+                ).join('');
+            }
 
-  document.getElementById('add-member-btn').addEventListener('click', async () => {
-    const nameInput = document.getElementById('new-member-name');
-    const fileInput = document.getElementById('new-member-avatar-file');
-    const name = nameInput.value.trim();
-    if (!name) return alert('Please enter a name');
-    let avatarData = null;
-    if (fileInput.files && fileInput.files[0]) {
-      const file = fileInput.files[0];
-      avatarData = await new Promise((res) => {
-        const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(file);
-      });
-    } else {
-      avatarData = generateAvatarDataUrl(name, pickColorForName(name));
-    }
-    await addDoc(collection(db, 'members'), { name, dailyTasks: {}, createdAt: serverTimestamp(), avatarData, avatarColor: pickColorForName(name) });
-    nameInput.value = ''; fileInput.value = null;
-  });
+            // Add this line
+            if (window.renderIcons) window.renderIcons();
+        }
+        
+        // Tasks View: Update Subject Filter
+        function updateSubjectFilter() {
+            const filterEl = document.getElementById('task-filter-subject');
+            if (!filterEl) return; // Guard clause
 
-  document.getElementById('gen-avatar-btn').addEventListener('click', () => {
-    const name = document.getElementById('new-member-name').value.trim() || 'User';
-    const data = generateAvatarDataUrl(name, pickColorForName(name));
-    const win = window.open();
-    win.document.write(`<img src="${data}" alt="avatar" style="width:200px;height:200px;border-radius:20px;display:block;margin:20px;"/>`);
-  });
+            const subjects = [...new Set(allTasks.map(task => task.subject).filter(Boolean))];
+            
+            // Save current value
+            const currentVal = filterEl.value;
+            
+            filterEl.innerHTML = '<option value="all">All Subjects</option>';
+            subjects.sort().forEach(subject => {
+                filterEl.innerHTML += `<option value="${subject}">${subject}</option>`;
+            });
+            
+            // Restore current value
+            filterEl.value = currentVal;
+        }
 
-  document.getElementById('master-calendar-container').addEventListener('click', (e) => {
-    if (e.target.closest('#prev-month-btn')) { calendarDate.setMonth(calendarDate.getMonth() - 1); renderApp(); }
-    if (e.target.closest('#next-month-btn')) { calendarDate.setMonth(calendarDate.getMonth() + 1); renderApp(); }
-    const dayCell = e.target.closest('.calendar-day');
-    if (dayCell) {
-      const date = dayCell.dataset.date;
-      allMembersData.forEach(member => memberViewStates[member.id] = date);
-      renderMembers(allMembersData);
-    }
-  });
+        // Helper: Create Task Item HTML
+        function createTaskItemHTML(task, isFullView = false) {
+            const isOverdue = !task.isCompleted && new Date(task.dueDate) < new Date();
+            
+            return `
+                <div class="task-item flex items-center p-3 bg-white rounded-lg border border-stone-200" data-task-id="${task.id}">
+                    <input type="checkbox" class="task-complete-checkbox h-5 w-5 text-indigo-600 rounded border-stone-300 focus:ring-indigo-500" ${task.isCompleted ? 'checked' : ''} data-task-id="${task.id}">
+                    <div class="ml-3 flex-1">
+                        <p class="font-medium ${task.isCompleted ? 'text-stone-500 line-through' : 'text-stone-800'}">${task.title}</p>
+                        <div class="flex items-center space-x-2 text-sm">
+                            <span class="${isOverdue ? 'text-red-600' : 'text-stone-500'}">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 inline-block -mt-0.5"></i>
+                                ${formatDate(task.dueDate)}
+                            </span>
+                            ${task.subject ? `<span class="text-stone-500">&bull; ${task.subject}</span>` : ''}
+                        </div>
+                    </div>
+                    ${isFullView ? getPriorityBadge(task.priority) : ''}
+                    <button class="task-edit-btn ml-4 text-stone-500 hover:text-indigo-600 p-1" data-task-id="${task.id}">
+                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                    </button>
+                    <button class="task-delete-btn ml-2 text-stone-500 hover:text-red-600 p-1" data-task-id="${task.id}">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Goals View
+        function renderGoals() {
+            const listEl = document.getElementById('goals-list');
+            if (!listEl) return; // Guard clause
+            
+            if (allGoals.length === 0) {
+                listEl.innerHTML = '<p id="goals-no-goals" class="text-stone-500 p-4 text-center col-span-full">No goals set yet. Add one!</p>';
+            } else {
+                listEl.innerHTML = allGoals.map(goal => {
+                    return `
+                        <div class="goal-item bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col" data-goal-id="${goal.id}">
+                            <div class="flex-1">
+                                <h4 class="text-lg font-semibold">${goal.title}</h4>
+                                <p class="text-sm text-stone-600 mt-2 mb-4">${goal.description || 'No description.'}</p>
+                            </div>
+                            <div class="text-sm text-stone-500">
+                                <strong>Target:</strong> ${goal.targetDate ? formatDate(goal.targetDate) : 'N/A'}
+                            </div>
+                            <div class="flex justify-end space-x-2 mt-4">
+                                 <button class="goal-edit-btn text-stone-500 hover:text-indigo-600 p-1" data-goal-id="${goal.id}">
+                                    <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                </button>
+                                <button class="goal-delete-btn text-stone-500 hover:text-red-600 p-1" data-goal-id="${goal.id}">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
 
-  document.getElementById('members-container').addEventListener('click', handleMemberEvents);
-  document.getElementById('members-container').addEventListener('change', handleMemberEvents);
+            // Re-create icons
+            if (window.renderIcons) window.renderIcons();
+        }
+        
+        // Schedule View
+        function renderSchedule() {
+            const container = document.getElementById('schedule-block-container');
+            if (!container) return; // Guard clause
 
-  document.getElementById('messenger-user-select').addEventListener('change', (e) => {
-      currentMessengerId = e.target.value;
-      localStorage.setItem('currentMessengerId', currentMessengerId);
-      const messagesQuery = query(collection(db, 'messages'), orderBy('createdAt', 'asc'));
-      onSnapshot(messagesQuery, snapshot => renderMessages(snapshot.docs));
-  });
+            const dayMap = { 0: 8, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7 }; // dayOfWeek to grid-column
+            
+            const colorClasses = {
+                indigo: 'bg-indigo-100 border-indigo-500 text-indigo-800',
+                sky: 'bg-sky-100 border-sky-500 text-sky-800',
+                emerald: 'bg-emerald-100 border-emerald-500 text-emerald-800',
+                amber: 'bg-amber-100 border-amber-500 text-amber-800',
+                rose: 'bg-rose-100 border-rose-500 text-rose-800',
+            };
+            
+            container.innerHTML = allScheduleBlocks.map(block => {
+                const start = parseTime(block.startTime); // e.g., 9.5 for 9:30 AM
+                const end = parseTime(block.endTime);
+                
+                // Start at 7am (row 2). Each hour is 4rem.
+                const topOffset = (start - 7) * 4; // in rem
+                const height = (end - start) * 4; // in rem
+                
+                const dayColumn = dayMap[block.dayOfWeek];
+                const classes = colorClasses[block.color] || colorClasses.indigo;
+                
+                return `
+                    <div class="schedule-block-item absolute w-full p-2 border-l-4 rounded-r-lg overflow-hidden ${classes}"
+                         style="grid-column: ${dayColumn}; top: ${topOffset}rem; height: ${height}rem;"
+                         data-block-id="${block.id}">
+                        <p class="font-semibold text-sm">${block.title}</p>
+                        <p class="text-xs">${block.startTime} - ${block.endTime}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // --- Event Handlers ---
+        
+        // Navigation
+        const navLinks = document.querySelectorAll('nav a');
+        const views = document.querySelectorAll('main > div[id^="view-"]');
+        
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const viewId = link.id.replace('nav-', 'view-');
+                
+                // Update nav link styles
+                navLinks.forEach(l => {
+                    l.classList.remove('text-indigo-600', 'bg-indigo-50');
+                    l.classList.add('text-stone-600', 'hover:bg-stone-100', 'hover:text-stone-800');
+                });
+                link.classList.add('text-indigo-600', 'bg-indigo-50');
+                link.classList.remove('text-stone-600', 'hover:bg-stone-100', 'hover:text-stone-800');
+                
+                // Show the correct view
+                views.forEach(view => {
+                    if (view.id === viewId) {
+                        view.classList.remove('hidden');
+                    } else {
+                        view.classList.add('hidden');
+                    }
+                });
+                
+                currentView = viewId.replace('view-', '');
+            });
+        });
+        
+        // Task Modal
+        document.getElementById('dash-add-task-btn')?.addEventListener('click', () => openTaskModal());
+        document.getElementById('tasks-add-task-btn')?.addEventListener('click', () => openTaskModal());
+        
+        document.querySelectorAll('.close-modal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.closest('div[id$="-modal"]').classList.add('modal-hidden');
+                btn.closest('div[id$="-modal"]').classList.remove('modal-visible');
+            });
+        });
+        
+        function openTaskModal(taskId = null) {
+            const form = document.getElementById('task-form');
+            if (!form) return;
+            form.reset();
+            
+            const modalTitle = document.getElementById('task-modal-title');
+            const taskIdInput = document.getElementById('task-id');
+            
+            if (taskId) {
+                // Edit mode
+                const task = allTasks.find(t => t.id === taskId);
+                if (task) {
+                    if (modalTitle) modalTitle.textContent = 'Edit Task';
+                    if (taskIdInput) taskIdInput.value = task.id;
+                    document.getElementById('task-title').value = task.title;
+                    document.getElementById('task-subject').value = task.subject;
+                    document.getElementById('task-due-date').value = task.dueDate;
+                    document.getElementById('task-priority').value = task.priority;
+                }
+            } else {
+                // Add mode
+                if (modalTitle) modalTitle.textContent = 'Add New Task';
+                if (taskIdInput) taskIdInput.value = '';
+                // Set default due date to today at 5 PM
+                const defaultDate = new Date();
+                defaultDate.setHours(17, 0, 0, 0);
+                // Format for datetime-local input
+                const year = defaultDate.getFullYear();
+                const month = (defaultDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = defaultDate.getDate().toString().padStart(2, '0');
+                const hours = defaultDate.getHours().toString().padStart(2, '0');
+                const minutes = defaultDate.getMinutes().toString().padStart(2, '0');
+                document.getElementById('task-due-date').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+            
+            document.getElementById('task-modal')?.classList.remove('modal-hidden');
+            document.getElementById('task-modal')?.classList.add('modal-visible');
+        }
+        
+        // Task Form Submit
+        document.getElementById('task-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!userId) return showMessage("Not signed in!", "error");
+            
+            const taskId = document.getElementById('task-id').value;
+            
+            // 1. Create the base data object
+            const taskData = {
+                title: document.getElementById('task-title').value,
+                subject: document.getElementById('task-subject').value,
+                dueDate: document.getElementById('task-due-date').value,
+                priority: document.getElementById('task-priority').value,
+            };
+            
+            try {
+                if (taskId) {
+                    // --- UPDATE ---
+                    const taskRef = doc(tasksCollection, taskId);
+                    
+                    // Find existing task to preserve 'isCompleted'
+                    const existingTask = allTasks.find(t => t.id === taskId);
+                    
+                    // Add 'isCompleted' field, defaulting to 'false' only if not found
+                    taskData.isCompleted = existingTask ? existingTask.isCompleted : false; 
+                    
+                    await updateDoc(taskRef, taskData);
+                    showMessage("Task updated!", "success");
+                } else {
+                    // --- ADD ---
+                    // Set 'isCompleted' to false only for new tasks
+                    taskData.isCompleted = false; 
+                    await addDoc(tasksCollection, taskData);
+                    showMessage("Task added!", "success");
+                }
+                
+                document.getElementById('task-modal')?.classList.add('modal-hidden');
+                document.getElementById('task-modal')?.classList.remove('modal-visible');
+                
+            } catch (error) {
+                // Add more detailed logging
+                console.error(`Error saving task (ID: ${taskId || 'NEW'}):`, error, "Data:", taskData);
+                showMessage("Could not save task.", "error");
+            }
+        });
+        
+        // Task List Actions (Completion, Edit, Delete)
+        document.getElementById('tasks-list-container')?.addEventListener('click', handleTaskAction);
+        document.getElementById('dashboard-task-list')?.addEventListener('click', handleTaskAction);
 
-  document.getElementById('toggle-link-mode').addEventListener('click', (e) => {
-    messengerOnlyLinks = !messengerOnlyLinks;
-    e.target.textContent = messengerOnlyLinks ? 'Only links: ON' : 'Only links: OFF';
-  });
+        async function handleTaskAction(e) {
+            if (!userId) return;
 
-  document.getElementById('send-message-btn').addEventListener('click', async () => {
-      const messageInput = document.getElementById('message-input');
-      const text = messageInput.value.trim();
+            // Toggle Completion
+            if (e.target.classList.contains('task-complete-checkbox')) {
+                const taskId = e.target.dataset.taskId;
+                const isCompleted = e.target.checked;
+                const taskRef = doc(tasksCollection, taskId);
+                try {
+                    await updateDoc(taskRef, { isCompleted: isCompleted });
+                } catch (error) {
+                    console.error("Error updating task status:", error);
+                    showMessage("Could not update task.", "error");
+                    e.target.checked = !isCompleted; // Revert checkbox on error
+                }
+            }
+            
+            // Edit Button
+            if (e.target.closest('.task-edit-btn')) {
+                const taskId = e.target.closest('.task-edit-btn').dataset.taskId;
+                openTaskModal(taskId);
+            }
+            
+            // Delete Button
+            if (e.target.closest('.task-delete-btn')) {
+                const taskId = e.target.closest('.task-delete-btn').dataset.taskId;
+                // Custom confirm
+                if (await showConfirm("Are you sure you want to delete this task?")) {
+                    const taskRef = doc(tasksCollection, taskId);
+                    try {
+                        await deleteDoc(taskRef);
+                        showMessage("Task deleted.", "success");
+                    } catch (error) {
+                        console.error("Error deleting task:", error);
+                        showMessage("Could not delete task.", "error");
+                    }
+                }
+            }
+        }
+        
+        // Task Filters
+        document.getElementById('task-filter-subject')?.addEventListener('change', renderTasksList);
+        document.getElementById('task-filter-status')?.addEventListener('change', renderTasksList);
+        
+        // --- Goal Handlers ---
+        
+        document.getElementById('goals-add-btn')?.addEventListener('click', () => openGoalModal());
+        
+        function openGoalModal(goalId = null) {
+            const form = document.getElementById('goal-form');
+            if (!form) return;
+            form.reset();
+            
+            const modalTitle = document.getElementById('goal-modal-title');
+            const goalIdInput = document.getElementById('goal-id');
+            
+            if (goalId) {
+                // Edit mode
+                const goal = allGoals.find(g => g.id === goalId);
+                if (goal) {
+                    if (modalTitle) modalTitle.textContent = 'Edit Goal';
+                    if (goalIdInput) goalIdInput.value = goal.id;
+                    document.getElementById('goal-title').value = goal.title;
+                    document.getElementById('goal-description').value = goal.description;
+                    document.getElementById('goal-target-date').value = goal.targetDate;
+                }
+            } else {
+                // Add mode
+                if (modalTitle) modalTitle.textContent = 'Add New Goal';
+                if (goalIdInput) goalIdInput.value = '';
+            }
+            
+            document.getElementById('goal-modal')?.classList.remove('modal-hidden');
+            document.getElementById('goal-modal')?.classList.add('modal-visible');
+        }
 
-      if (!currentMessengerId) { alert('Hey! Please pick your name from the list to send a message. 😊'); return; }
-      if (!text) return;
+        document.getElementById('goal-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!userId) return showMessage("Not signed in!", "error");
+            
+            const goalId = document.getElementById('goal-id').value;
+            const goalData = {
+                title: document.getElementById('goal-title').value,
+                description: document.getElementById('goal-description').value,
+                targetDate: document.getElementById('goal-target-date').value,
+            };
+            
+            try {
+                if (goalId) {
+                    // Update
+                    const goalRef = doc(goalsCollection, goalId);
+                    await updateDoc(goalRef, goalData);
+                    showMessage("Goal updated!", "success");
+                } else {
+                    // Add
+                    await addDoc(goalsCollection, goalData);
+                    showMessage("Goal added!", "success");
+                }
+                
+                document.getElementById('goal-modal')?.classList.add('modal-hidden');
+                document.getElementById('goal-modal')?.classList.remove('modal-visible');
+                
+            } catch (error) {
+                console.error("Error saving goal:", error);
+                showMessage("Could not save goal.", "error");
+            }
+        });
 
-      const isLink = /(https?:\/\/\S+)/.test(text);
-      if (messengerOnlyLinks && !isLink) { alert('Oopsie! This chat is for links only. Please share a URL! 🔗'); return; }
+        document.getElementById('goals-list')?.addEventListener('click', async (e) => {
+            if (!userId) return;
 
-      const sender = allMembersData.find(m => m.id === currentMessengerId);
-      if (!sender) { alert('Could not find your member data. Please try re-selecting your name.'); return; }
+            // Edit Button
+            if (e.target.closest('.goal-edit-btn')) {
+                const goalId = e.target.closest('.goal-edit-btn').dataset.goalId;
+                openGoalModal(goalId);
+            }
+            
+            // Delete Button
+            if (e.target.closest('.goal-delete-btn')) {
+                const goalId = e.target.closest('.goal-delete-btn').dataset.goalId;
+                if (await showConfirm("Are you sure you want to delete this goal?")) {
+                    const goalRef = doc(goalsCollection, goalId);
+                    try {
+                        await deleteDoc(goalRef);
+                        showMessage("Goal deleted.", "success");
+                    } catch (error) {
+                        console.error("Error deleting goal:", error);
+                        showMessage("Could not delete goal.", "error");
+                    }
+                }
+            }
+        });
+        
+        // --- Schedule Handlers ---
+        
+        document.getElementById('schedule-add-btn')?.addEventListener('click', () => openScheduleModal());
+        
+        function openScheduleModal(blockId = null) {
+            const form = document.getElementById('schedule-form');
+            if (!form) return;
+            form.reset();
+            
+            const modalTitle = document.getElementById('schedule-modal-title');
+            const blockIdInput = document.getElementById('schedule-id');
+            const deleteBtn = document.getElementById('schedule-delete-btn');
+            
+            if (blockId) {
+                // Edit mode
+                const block = allScheduleBlocks.find(b => b.id === blockId);
+                if (block) {
+                    if (modalTitle) modalTitle.textContent = 'Edit Study Block';
+                    if (blockIdInput) blockIdInput.value = block.id;
+                    document.getElementById('schedule-title').value = block.title;
+                    document.getElementById('schedule-day').value = block.dayOfWeek;
+                    document.getElementById('schedule-start-time').value = block.startTime;
+                    document.getElementById('schedule-end-time').value = block.endTime;
+                    document.getElementById('schedule-color').value = block.color;
+                    if (deleteBtn) deleteBtn.classList.remove('hidden');
+                }
+            } else {
+                // Add mode
+                if (modalTitle) modalTitle.textContent = 'Add Study Block';
+                if (blockIdInput) blockIdInput.value = '';
+                if (deleteBtn) deleteBtn.classList.add('hidden');
+            }
+            
+            document.getElementById('schedule-modal')?.classList.remove('modal-hidden');
+            document.getElementById('schedule-modal')?.classList.add('modal-visible');
+        }
+        
+        document.getElementById('schedule-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!userId) return showMessage("Not signed in!", "error");
+            
+            const blockId = document.getElementById('schedule-id').value;
+            const blockData = {
+                title: document.getElementById('schedule-title').value,
+                dayOfWeek: document.getElementById('schedule-day').value,
+                startTime: document.getElementById('schedule-start-time').value,
+                endTime: document.getElementById('schedule-end-time').value,
+                color: document.getElementById('schedule-color').value,
+            };
+            
+            // Validation
+            if (parseTime(blockData.endTime) <= parseTime(blockData.startTime)) {
+                showMessage("End time must be after start time.", "error");
+                return;
+            }
+            
+            try {
+                if (blockId) {
+                    // Update
+                    const blockRef = doc(scheduleCollection, blockId);
+                    await updateDoc(blockRef, blockData);
+                    showMessage("Block updated!", "success");
+                } else {
+                    // Add
+                    await addDoc(scheduleCollection, blockData);
+                    showMessage("Block added!", "success");
+                }
+                
+                document.getElementById('schedule-modal')?.classList.add('modal-hidden');
+                document.getElementById('schedule-modal')?.classList.remove('modal-visible');
+                
+            } catch (error) {
+                console.error("Error saving block:", error);
+                showMessage("Could not save block.", "error");
+            }
+        });
+        
+        // Schedule Block Click (for edit)
+        document.getElementById('schedule-block-container')?.addEventListener('click', (e) => {
+            const blockEl = e.target.closest('.schedule-block-item');
+            if (blockEl) {
+                openScheduleModal(blockEl.dataset.blockId);
+            }
+        });
+        
+        // Schedule Block Delete
+        document.getElementById('schedule-delete-btn')?.addEventListener('click', async () => {
+            if (!userId) return;
+            const blockId = document.getElementById('schedule-id').value;
+            
+            if (blockId && await showConfirm("Are you sure you want to delete this block?")) {
+                const blockRef = doc(scheduleCollection, blockId);
+                try {
+                    await deleteDoc(blockRef);
+                    showMessage("Block deleted.", "success");
+                    document.getElementById('schedule-modal')?.classList.add('modal-hidden');
+                    document.getElementById('schedule-modal')?.classList.remove('modal-visible');
+                } catch (error) {
+                    console.error("Error deleting block:", error);
+                    showMessage("Could not delete block.", "error");
+                }
+            }
+        });
+        
+        // --- Notifications ---
+        
+        document.getElementById('enable-notifications-btn')?.addEventListener('click', () => {
+            if (!('Notification' in window)) {
+                showMessage("This browser doesn't support notifications.", "error");
+                return;
+            }
+            
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    showMessage("Notifications enabled!", "success");
+                    new Notification("Study Planner", {
+                        body: "You'll now receive reminders for your tasks.",
+                        icon: "https://img.icons8.com/color/48/000000/ok--v1.png" // Simple check icon
+                    });
+                } else {
+                    showMessage("Notifications were not enabled.", "error");
+                }
+            });
+        });
 
-      try {
-          await addDoc(collection(db, 'messages'), { text: text, senderId: currentMessengerId, senderName: sender.name, createdAt: serverTimestamp() });
-          messageInput.value = '';
-      } catch (error) { console.error("Error sending message: ", error); }
-  });
+        // Simple reminder check
+        setInterval(() => {
+            if (Notification.permission !== 'granted') return;
+            
+            const now = new Date();
+            const reminderTime = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes from now
+            
+            allTasks.forEach(task => {
+                if (task.isCompleted || task.notified) return;
+                
+                const dueDate = new Date(task.dueDate);
+                if (dueDate > now && dueDate <= reminderTime) {
+                    new Notification("Upcoming Task Reminder", {
+                        body: `${task.title} is due at ${formatDate(task.dueDate, true)}.`,
+                        icon: "https://img.icons8.com/color/48/000000/alarm-clock.png" // Simple clock icon
+                    });
+                    // Mark as notified to prevent spam (in a real app, this flag would be in Firestore)
+                    task.notified = true; 
+                }
+            });
+        }, 60000); // Check every minute
+        
 
-  document.getElementById('message-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('send-message-btn').click(); });
+        // --- Utility Functions ---
+        
+        // Show a custom message box
+        function showMessage(text, type = "success") {
+            const box = document.getElementById('message-box');
+            const textEl = document.getElementById('message-text');
+            if (!box || !textEl) return;
+            
+            textEl.textContent = text;
+            box.classList.remove('bg-green-600', 'bg-red-600');
+            
+            if (type === "error") {
+                box.classList.add('bg-red-600');
+            } else {
+                box.classList.add('bg-green-600');
+            }
+            
+            box.classList.remove('modal-hidden');
+            box.classList.add('modal-visible');
+            
+            setTimeout(() => {
+                box.classList.add('modal-hidden');
+                box.classList.remove('modal-visible');
+            }, 3000);
+        }
+        
+        // Custom confirmation dialog (since alert/confirm is blocked)
+        function showConfirm(message) {
+            return new Promise((resolve) => {
+                // For this example, we'll use the message box as a "confirm"
+                // In a real app, you'd build a proper modal with "Yes" "No" buttons
+                // For now, we'll just auto-confirm after a short delay
+                // and show the confirmation message.
+                // A better approach would be to build a dedicated confirm modal.
+                // For simplicity, we'll use the browser's `confirm`
+                // and if it fails, default to `true`.
+                try {
+                    // This will likely be blocked in the iframe, but we try anyway
+                    const result = confirm(message);
+                    resolve(result);
+                } catch (e) {
+                    // This will likely happen in the iframe
+                    console.warn("`confirm` dialog failed, defaulting to 'true'. Build a custom modal for production.");
+                    // Show a message to the user
+                    showMessage(`CONFIRM: ${message} (Auto-confirmed)`, "success");
+                    // Resolve true after a delay so the user can read it
+                    setTimeout(() => resolve(true), 1500);
+                }
+            });
+        }
+        
+        // Format date
+        function formatDate(dateString, includeTime = false) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            const options = {
+                month: 'short',
+                day: 'numeric',
+            };
+            
+            // Avoid showing year if it's the current year
+            if (date.getFullYear() !== new Date().getFullYear()) {
+                options.year = 'numeric';
+            }
 
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') renderMembers(allMembersData); });
-  window.addEventListener('beforeunload', () => { Object.values(timerIntervals).forEach(clearInterval); });
-}
+            if (includeTime) {
+                options.hour = 'numeric';
+                options.minute = 'numeric';
+            }
+            return date.toLocaleDateString('en-US', options);
+        }
+        
+        // Get priority badge
+        function getPriorityBadge(priority) {
+            switch (priority) {
+                case 'high':
+                    return '<span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-800">High</span>';
+                case 'medium':
+                    return '<span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">Medium</span>';
+                case 'low':
+                    return '<span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-100 text-green-800">Low</span>';
+                default:
+                    return '';
+            }
+        }
+        
+        // Parse time string (e.g., "09:30") to a number (e.g., 9.5)
+        function parseTime(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours + minutes / 60;
+        }
 
-function pickColorForName(name) {
-  const colors = ['#ec4899', '#f472b6', '#f9a8d4', '#fda4af', '#fb7185', '#e879f9'];
-  let h = 0; for (let i=0;i<name.length;i++) h = (h<<5) - h + name.charCodeAt(i);
-  return colors[Math.abs(h) % colors.length];
-}
+        // --- Final Setup ---
+        
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Add createIcons to a global function so we can call it after rendering new content
+        window.renderIcons = () => lucide.createIcons();
+        
+        // Start the app
+        initializeFirebase();
 
-main();
-</script>
-
+    </script>
 </body>
 </html>
